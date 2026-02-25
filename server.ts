@@ -13,6 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
 const expensesDataDir = path.join(dataDir, "expenses");
 const inventoryDataDir = path.join(dataDir, "inventory");
+const ordersDataDir = path.join(dataDir, "orders");
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir);
 }
@@ -22,15 +23,19 @@ if (!fs.existsSync(expensesDataDir)) {
 if (!fs.existsSync(inventoryDataDir)) {
   fs.mkdirSync(inventoryDataDir);
 }
+if (!fs.existsSync(ordersDataDir)) {
+  fs.mkdirSync(ordersDataDir);
+}
 
 const db = new Database(path.join(dataDir, "inventory.db"));
 
 // Configure Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Determine destination based on fieldname or route
-    if (file.fieldname === "invoice") {
+    if (file.fieldname === "invoice" || file.fieldname === "invoices") {
       cb(null, "data/expenses/");
+    } else if (file.fieldname === "attachments") {
+      cb(null, "data/orders/");
     } else {
       cb(null, "data/");
     }
@@ -151,6 +156,15 @@ db.exec(`
     unit_price REAL,
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (variant_id) REFERENCES item_variants(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS order_attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER,
+    name TEXT,
+    url TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS settings (
@@ -542,8 +556,8 @@ async function startServer() {
     const orders = db
       .prepare(
         `
-      SELECT o.*, 
-             (SELECT json_group_array(json_object('id', oi.id, 'name', i.name, 'size', v.size, 'quantity', oi.quantity, 'unit_price', oi.unit_price))
+      SELECT o.*,
+             (SELECT json_group_array(json_object('id', oi.id, 'variant_id', oi.variant_id, 'name', i.name, 'size', v.size, 'quantity', oi.quantity, 'unit_price', oi.unit_price))
               FROM order_items oi
               JOIN item_variants v ON oi.variant_id = v.id
               JOIN items i ON v.item_id = i.id
@@ -554,17 +568,27 @@ async function startServer() {
       )
       .all();
 
+    const attachments = db
+      .prepare("SELECT * FROM order_attachments")
+      .all() as any[];
+
     res.json(
       orders.map((o: any) => ({
         ...o,
         items: JSON.parse(o.items),
+        attachments: attachments.filter((a) => a.order_id === o.id),
       })),
     );
   });
 
-  app.post("/api/orders", (req, res) => {
-    const { status, customer_details, discount, total_amount, items, notes } =
-      req.body;
+  app.post("/api/orders", upload.array("attachments"), (req, res) => {
+    const status = req.body.status;
+    const customer_details = JSON.parse(req.body.customer_details || "{}");
+    const discount = parseFloat(req.body.discount) || 0;
+    const total_amount = parseFloat(req.body.total_amount) || 0;
+    const items = JSON.parse(req.body.items || "[]");
+    const notes = req.body.notes || null;
+    const attachmentNames = JSON.parse(req.body.attachmentNames || "[]");
 
     if (!isValidOrderStatus(status)) {
       return res.status(400).json({ error: "Invalid order status" });
@@ -605,14 +629,40 @@ async function startServer() {
     });
 
     const orderId = transaction();
+
+    const files = req.files as Express.Multer.File[];
+    if (files && files.length > 0) {
+      const orderDir = path.join(ordersDataDir, orderId.toString());
+      if (!fs.existsSync(orderDir)) {
+        fs.mkdirSync(orderDir, { recursive: true });
+      }
+      files.forEach((file, index) => {
+        const newPath = path.join(orderDir, file.filename);
+        fs.renameSync(file.path, newPath);
+        const url = `/data/orders/${orderId}/${file.filename}`;
+        const attName = attachmentNames[index] || file.originalname;
+        db.prepare(
+          "INSERT INTO order_attachments (order_id, name, url) VALUES (?, ?, ?)",
+        ).run(orderId, attName, url);
+      });
+    }
+
     res.status(201).json({ id: orderId });
   });
 
-  app.put("/api/orders/:id", (req, res) => {
+  app.put("/api/orders/:id", upload.array("attachments"), (req, res) => {
     try {
       const { id } = req.params;
-      const { status, customer_details, discount, total_amount, items, notes } =
-        req.body;
+      const status = req.body.status;
+      const customer_details = JSON.parse(req.body.customer_details || "{}");
+      const discount = parseFloat(req.body.discount) || 0;
+      const total_amount = parseFloat(req.body.total_amount) || 0;
+      const items = JSON.parse(req.body.items || "[]");
+      const notes = req.body.notes || null;
+      const attachmentNames = JSON.parse(req.body.attachmentNames || "[]");
+      const existingAttachments = JSON.parse(
+        req.body.existingAttachments || "[]",
+      );
 
       if (!isValidOrderStatus(status)) {
         return res.status(400).json({ error: "Invalid order status" });
@@ -667,6 +717,32 @@ async function startServer() {
       });
 
       transaction();
+
+      // Update existing attachment names
+      existingAttachments.forEach((att: any) => {
+        db.prepare(
+          "UPDATE order_attachments SET name = ? WHERE id = ?",
+        ).run(att.name, att.id);
+      });
+
+      // Handle new files
+      const files = req.files as Express.Multer.File[];
+      if (files && files.length > 0) {
+        const orderDir = path.join(ordersDataDir, id.toString());
+        if (!fs.existsSync(orderDir)) {
+          fs.mkdirSync(orderDir, { recursive: true });
+        }
+        files.forEach((file, index) => {
+          const newPath = path.join(orderDir, file.filename);
+          fs.renameSync(file.path, newPath);
+          const url = `/data/orders/${id}/${file.filename}`;
+          const attName = attachmentNames[index] || file.originalname;
+          db.prepare(
+            "INSERT INTO order_attachments (order_id, name, url) VALUES (?, ?, ?)",
+          ).run(id, attName, url);
+        });
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error("Order update error:", error);
@@ -717,6 +793,27 @@ async function startServer() {
 
     transaction();
     res.json({ success: true });
+  });
+
+  app.delete("/api/orders/attachments/:id", (req, res) => {
+    try {
+      const { id } = req.params;
+      const attachment = db
+        .prepare("SELECT * FROM order_attachments WHERE id = ?")
+        .get(id) as any;
+
+      if (attachment) {
+        const relativePath = attachment.url.replace("/data/", "");
+        const fullPath = path.join(dataDir, relativePath);
+        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        db.prepare("DELETE FROM order_attachments WHERE id = ?").run(id);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Attachment delete error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   // Expenses

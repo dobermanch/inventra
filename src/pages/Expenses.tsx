@@ -82,8 +82,11 @@ export default function Expenses() {
     expenseName: string;
   }>({ el: null, invoices: [], expenseName: "" });
 
-  const formatDownloadName = (expenseName: string, invoiceName: string) =>
-    `${expenseName}-${invoiceName}`.replace(/\s+/g, "-");
+  const formatDownloadName = (
+    expenseName: string,
+    invoiceName: string,
+    invoiceId: number,
+  ) => `${invoiceId}-${expenseName}-${invoiceName}`.replace(/\s+/g, "-");
 
   const handleOpenInvoiceMenu = (
     event: React.MouseEvent<HTMLElement>,
@@ -101,7 +104,11 @@ export default function Expenses() {
     invoiceMenu.invoices.forEach((inv) => {
       const a = document.createElement("a");
       a.href = inv.url;
-      a.download = formatDownloadName(invoiceMenu.expenseName, inv.name);
+      a.download = formatDownloadName(
+        invoiceMenu.expenseName,
+        inv.name,
+        inv.id,
+      );
       a.target = "_blank";
       document.body.appendChild(a);
       a.click();
@@ -539,7 +546,11 @@ export default function Expenses() {
             key={inv.id}
             component="a"
             href={inv.url}
-            download={formatDownloadName(invoiceMenu.expenseName, inv.name)}
+            download={formatDownloadName(
+              invoiceMenu.expenseName,
+              inv.name,
+              inv.id,
+            )}
             target="_blank"
             onClick={handleCloseInvoiceMenu}
           >
@@ -710,6 +721,7 @@ export default function Expenses() {
               InputLabelProps={{ shrink: true }}
             />
 
+            <Divider sx={{ my: 2 }} />
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 {t("uploadedInvoices")}
@@ -723,10 +735,12 @@ export default function Expenses() {
                     borderColor: isDragActive ? "primary.main" : "divider",
                     borderRadius: 1,
                     p: 2,
-                    textAlign: "center",
                     cursor: "pointer",
                     bgcolor: isDragActive ? "action.hover" : "transparent",
                     transition: "all 0.2s ease",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                     "&:hover": {
                       borderColor: "primary.main",
                       bgcolor: "action.hover",
@@ -735,7 +749,13 @@ export default function Expenses() {
                 >
                   <input {...getInputProps()} />
                   <CloudUpload
-                    sx={{ fontSize: 32, color: "text.secondary", mb: 1 }}
+                    size={32}
+                    style={{
+                      marginBottom: 4,
+                      color: isDragActive
+                        ? theme.palette.primary.main
+                        : theme.palette.action.active,
+                    }}
                   />
                   <Typography variant="body2" color="text.secondary">
                     {t("dragAndDrop")}

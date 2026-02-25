@@ -24,6 +24,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemSecondaryAction,
   Grid,
   Stack,
   FormControl,
@@ -33,6 +34,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import { useDropzone } from "react-dropzone";
 import {
   IconPlus as Add,
   IconTrash as Delete,
@@ -42,6 +44,9 @@ import {
   IconArrowBackUp as Undo,
   IconEdit as Edit,
   IconSearch as Search,
+  IconCloudUpload as CloudUpload,
+  IconDownload as Download,
+  IconX as Close,
 } from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
@@ -82,6 +87,24 @@ export default function Orders() {
     phone: false,
     address: false,
   });
+  const [selectedFiles, setSelectedFiles] = useState<
+    { file: File; name: string }[]
+  >([]);
+  const [existingAttachments, setExistingAttachments] = useState<any[]>([]);
+  const [existingAttachmentErrors, setExistingAttachmentErrors] = useState<
+    Set<number>
+  >(new Set());
+  const [selectedFileErrors, setSelectedFileErrors] = useState<Set<number>>(
+    new Set(),
+  );
+
+  const formatAttachmentName = (
+    orderId: number | null,
+    customerName: string,
+    attName: string,
+  ) => {
+    return `${orderId}-${customerName}-${attName}`.replace(/\s+/g, "-");
+  };
 
   const fetchOrders = () => {
     fetch("/api/orders")
@@ -100,6 +123,26 @@ export default function Orders() {
     fetchInventory();
   }, []);
 
+  const onDrop = (acceptedFiles: File[]) => {
+    setSelectedFiles((prev) => [
+      ...prev,
+      ...acceptedFiles.map((file) => ({ file, name: file.name })),
+    ]);
+  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    if (window.confirm(t("areYouSureDelete"))) {
+      await fetch(`/api/orders/attachments/${attachmentId}`, {
+        method: "DELETE",
+      });
+      setExistingAttachments((prev) =>
+        prev.filter((att) => att.id !== attachmentId),
+      );
+      fetchOrders();
+    }
+  };
+
   const handleCreateOrder = async () => {
     const errors = {
       name: !newOrder.customer_details.name.trim(),
@@ -109,19 +152,51 @@ export default function Orders() {
     setFormErrors(errors);
     if (errors.name || errors.phone || errors.address) return;
 
-    const total =
+    const badExisting = new Set(
+      existingAttachments
+        .map((att, i) => (!att.name.trim() ? i : -1))
+        .filter((i) => i !== -1),
+    );
+    const badSelected = new Set(
+      selectedFiles
+        .map((sf, i) => (!sf.name.trim() ? i : -1))
+        .filter((i) => i !== -1),
+    );
+    if (badExisting.size > 0 || badSelected.size > 0) {
+      setExistingAttachmentErrors(badExisting);
+      setSelectedFileErrors(badSelected);
+      return;
+    }
+
+    const total = Math.max(
+      0,
       newOrder.items.reduce(
         (sum, item) => sum + item.unit_price * item.quantity,
         0,
-      ) - newOrder.discount;
+      ) - newOrder.discount,
+    );
+
+    const formData = new FormData();
+    formData.append("status", newOrder.status);
+    formData.append(
+      "customer_details",
+      JSON.stringify(newOrder.customer_details),
+    );
+    formData.append("discount", newOrder.discount.toString());
+    formData.append("total_amount", total.toString());
+    formData.append("items", JSON.stringify(newOrder.items));
+    formData.append("notes", newOrder.notes);
+    selectedFiles.forEach((sf) => formData.append("attachments", sf.file));
+    formData.append(
+      "attachmentNames",
+      JSON.stringify(selectedFiles.map((sf) => sf.name)),
+    );
+    formData.append("existingAttachments", JSON.stringify(existingAttachments));
+
     const url = newOrder.id ? `/api/orders/${newOrder.id}` : "/api/orders";
     const method = newOrder.id ? "PUT" : "POST";
 
-    await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newOrder, total_amount: total }),
-    });
+    await fetch(url, { method, body: formData });
     setOpen(false);
     resetForm();
     fetchOrders();
@@ -138,6 +213,10 @@ export default function Orders() {
       items: [] as any[],
     });
     setFormErrors({ name: false, phone: false, address: false });
+    setSelectedFiles([]);
+    setExistingAttachments([]);
+    setExistingAttachmentErrors(new Set());
+    setSelectedFileErrors(new Set());
   };
 
   const handleEditClick = (order: any) => {
@@ -161,6 +240,7 @@ export default function Orders() {
         unit_price: item.unit_price,
       })),
     });
+    setExistingAttachments(order.attachments || []);
     setOpen(true);
   };
 
@@ -622,6 +702,164 @@ export default function Orders() {
 
             <Divider sx={{ my: 2 }} />
           </Stack>
+
+          {/* Attachments */}
+          <Stack spacing={1}>
+            <Typography variant="subtitle2" sx={{ pt: 1 }}>
+              {t("uploadedInvoices")}
+            </Typography>
+            <Box
+              {...getRootProps()}
+              sx={{
+                border: "2px dashed",
+                borderColor: isDragActive ? "primary.main" : "divider",
+                borderRadius: 1,
+                p: 2,
+                cursor: "pointer",
+                bgcolor: isDragActive ? "action.hover" : "transparent",
+                transition: "all 0.2s ease",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: "action.hover",
+                },
+              }}
+            >
+              <input {...getInputProps()} />
+              <CloudUpload
+                size={32}
+                style={{
+                  marginBottom: 4,
+                  color: isDragActive
+                    ? theme.palette.primary.main
+                    : theme.palette.action.active,
+                }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {t("dragAndDrop")}
+              </Typography>
+            </Box>
+
+            {existingAttachments.length > 0 && (
+              <List
+                size="small"
+                sx={{
+                  bgcolor: "background.paper",
+                  borderRadius: 1,
+                  border: "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                {existingAttachments.map((att, idx) => (
+                  <ListItem
+                    key={att.id}
+                    divider={idx < existingAttachments.length - 1}
+                  >
+                    <TextField
+                      size="small"
+                      fullWidth
+                      error={existingAttachmentErrors.has(idx)}
+                      value={att.name}
+                      onChange={(e) => {
+                        const updated = [...existingAttachments];
+                        updated[idx].name = e.target.value;
+                        setExistingAttachments(updated);
+                        if (e.target.value.trim()) {
+                          setExistingAttachmentErrors((prev) => {
+                            const next = new Set(prev);
+                            next.delete(idx);
+                            return next;
+                          });
+                        }
+                      }}
+                      sx={{ mr: 6 }}
+                    />
+                    <ListItemSecondaryAction>
+                      <Tooltip title={t("downloadInvoice")}>
+                        <IconButton
+                          size="small"
+                          component="a"
+                          href={att.url}
+                          download={formatAttachmentName(
+                            newOrder.id,
+                            newOrder.customer_details.name,
+                            att.name,
+                          )}
+                          target="_blank"
+                        >
+                          <Download size={16} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t("delete")}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteAttachment(att.id)}
+                        >
+                          <Delete size={16} />
+                        </IconButton>
+                      </Tooltip>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+
+            {selectedFiles.length > 0 && (
+              <List
+                size="small"
+                sx={{
+                  bgcolor: "action.hover",
+                  borderRadius: 1,
+                  border: "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                {selectedFiles.map((sf, idx) => (
+                  <ListItem key={idx} divider={idx < selectedFiles.length - 1}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      error={selectedFileErrors.has(idx)}
+                      value={sf.name}
+                      onChange={(e) => {
+                        const updated = [...selectedFiles];
+                        updated[idx].name = e.target.value;
+                        setSelectedFiles(updated);
+                        if (e.target.value.trim()) {
+                          setSelectedFileErrors((prev) => {
+                            const next = new Set(prev);
+                            next.delete(idx);
+                            return next;
+                          });
+                        }
+                      }}
+                      sx={{ mr: 4 }}
+                    />
+                    <ListItemSecondaryAction>
+                      <Tooltip title={t("delete")}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() =>
+                            setSelectedFiles((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }
+                        >
+                          <Close size={16} />
+                        </IconButton>
+                      </Tooltip>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+            <Divider sx={{ my: 2 }} />
+          </Stack>
+
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
               {t("addItems")}

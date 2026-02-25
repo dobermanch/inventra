@@ -24,10 +24,19 @@ import {
   Button,
   Divider,
   Grid,
+  IconButton,
+  Tooltip,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { IconSearch as Search } from "@tabler/icons-react";
+import {
+  IconSearch as Search,
+  IconDownload as Download,
+} from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
 import {
@@ -50,6 +59,14 @@ export default function Sales() {
     "none" | "year" | "monthYear" | "status"
   >("none");
   const [viewOrder, setViewOrder] = useState<any | null>(null);
+
+  const formatAttachmentName = (
+    orderId: number,
+    customerName: string,
+    attName: string,
+  ) => {
+    return `${orderId}-${customerName}-${attName}`.replace(/\s+/g, "-");
+  };
 
   useEffect(() => {
     fetch("/api/orders")
@@ -466,6 +483,51 @@ export default function Sales() {
                     {formatCurrency(viewOrder.total_amount)}
                   </Typography>
                 </Stack>
+
+                {viewOrder.attachments && viewOrder.attachments.length > 0 && (
+                  <>
+                    <Divider />
+                    <Typography variant="subtitle2">
+                      {t("uploadedInvoices")}
+                    </Typography>
+                    <List
+                      dense
+                      sx={{
+                        bgcolor: "background.paper",
+                        borderRadius: 1,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        p: 0,
+                      }}
+                    >
+                      {viewOrder.attachments.map((att: any, idx: number) => (
+                        <ListItem
+                          key={att.id}
+                          divider={idx < viewOrder.attachments.length - 1}
+                        >
+                          <ListItemText primary={att.name} />
+                          <ListItemSecondaryAction>
+                            <Tooltip title={t("downloadInvoice")}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={att.url}
+                                download={formatAttachmentName(
+                                  viewOrder.id,
+                                  viewCustomer.name,
+                                  att.name,
+                                )}
+                                target="_blank"
+                              >
+                                <Download size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                )}
               </Stack>
             </DialogContent>
             <DialogActions>
