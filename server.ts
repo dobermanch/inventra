@@ -13,11 +13,15 @@ const db = new Database('inventory.db');
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
 const expensesUploadsDir = path.join(uploadsDir, 'expenses');
+const inventoryUploadsDir = path.join(uploadsDir, 'inventory');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 if (!fs.existsSync(expensesUploadsDir)) {
   fs.mkdirSync(expensesUploadsDir);
+}
+if (!fs.existsSync(inventoryUploadsDir)) {
+  fs.mkdirSync(inventoryUploadsDir);
 }
 
 // Configure Multer
@@ -221,6 +225,21 @@ async function startServer() {
     }
   });
 
+  // Categories
+  app.get('/api/categories', (_req, res) => {
+    const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
+    res.json(categories);
+  });
+
+  app.post('/api/categories', (req, res) => {
+    const { name } = req.body;
+    // req used above for body
+    if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
+    db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)').run(name.trim());
+    const cat = db.prepare('SELECT * FROM categories WHERE name = ?').get(name.trim());
+    res.json(cat);
+  });
+
   // Inventory
   app.get('/api/inventory', (req, res) => {
     try {
@@ -247,29 +266,38 @@ async function startServer() {
     try {
       const { name, description, category_id, low_stock_threshold, price, variants } = req.body;
       const parsedVariants = JSON.parse(variants || '[]');
-      const picture_url = req.file ? `/uploads/${req.file.filename}` : req.body.picture_url;
-      
+
       const transaction = db.transaction(() => {
         const info = db.prepare(`
-          INSERT INTO items (name, description, picture_url, price, category_id, low_stock_threshold) 
+          INSERT INTO items (name, description, picture_url, price, category_id, low_stock_threshold)
           VALUES (:name, :description, :picture_url, :price, :category_id, :low_stock_threshold)
         `).run({
           name: name || '',
           description: description || '',
-          picture_url: picture_url || '',
+          picture_url: req.body.picture_url || '',
           price: parseFloat(price) || 0,
           category_id: parseInt(category_id) || 1,
           low_stock_threshold: parseInt(low_stock_threshold) || 5
         });
-        
+
         const itemId = info.lastInsertRowid;
+
+        if (req.file) {
+          const itemDir = path.join(inventoryUploadsDir, itemId.toString());
+          if (!fs.existsSync(itemDir)) fs.mkdirSync(itemDir, { recursive: true });
+          const newPath = path.join(itemDir, req.file.filename);
+          fs.renameSync(req.file.path, newPath);
+          db.prepare('UPDATE items SET picture_url = ? WHERE id = ?')
+            .run(`/uploads/inventory/${itemId}/${req.file.filename}`, itemId);
+        }
+
         const insertVariant = db.prepare('INSERT INTO item_variants (item_id, size, stock_count) VALUES (?, ?, ?)');
         for (const v of parsedVariants) {
           insertVariant.run(itemId, v.size || '', parseInt(v.stock_count) || 0);
         }
         return itemId;
       });
-      
+
       const itemId = transaction();
       res.status(201).json({ id: itemId });
     } catch (error) {
@@ -286,8 +314,20 @@ async function startServer() {
       
       const item = db.prepare('SELECT picture_url FROM items WHERE id = ?').get(id) as any;
       if (!item) return res.status(404).json({ error: 'Item not found' });
-      
-      const picture_url = req.file ? `/uploads/${req.file.filename}` : req.body.picture_url || item.picture_url;
+
+      let picture_url = req.body.picture_url || item.picture_url;
+      if (req.file) {
+        const itemDir = path.join(inventoryUploadsDir, id.toString());
+        if (!fs.existsSync(itemDir)) fs.mkdirSync(itemDir, { recursive: true });
+        const newPath = path.join(itemDir, req.file.filename);
+        fs.renameSync(req.file.path, newPath);
+        picture_url = `/uploads/inventory/${id}/${req.file.filename}`;
+        // Delete old local file
+        if (item.picture_url && item.picture_url.startsWith('/uploads/')) {
+          const oldPath = path.join(__dirname, item.picture_url);
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+      }
 
       const transaction = db.transaction(() => {
         db.prepare(`
@@ -350,7 +390,11 @@ async function startServer() {
   app.delete('/api/inventory/:id', (req, res) => {
     try {
       const { id } = req.params;
-      // Soft delete
+      const item = db.prepare('SELECT picture_url FROM items WHERE id = ?').get(id) as any;
+      if (item?.picture_url?.startsWith('/uploads/')) {
+        const itemDir = path.join(inventoryUploadsDir, id.toString());
+        if (fs.existsSync(itemDir)) fs.rmSync(itemDir, { recursive: true, force: true });
+      }
       db.prepare('UPDATE items SET is_deleted = 1 WHERE id = ?').run(id);
       res.json({ success: true });
     } catch (error) {
@@ -637,6 +681,7 @@ async function startServer() {
       const expenseDir = path.join(expensesUploadsDir, id.toString());
       if (fs.existsSync(expenseDir)) fs.rmSync(expenseDir, { recursive: true, force: true });
 
+      db.prepare('DELETE FROM expense_invoices WHERE expense_id = ?').run(id);
       db.prepare('DELETE FROM expenses WHERE id = ?').run(id);
       res.json({ success: true });
     } catch (error) {

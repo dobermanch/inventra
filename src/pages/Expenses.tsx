@@ -56,12 +56,15 @@ export default function Expenses() {
     "none" | "year" | "monthYear" | "subcategory" | "category"
   >("none");
   const [nameError, setNameError] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
   const [existingInvoiceErrors, setExistingInvoiceErrors] = useState<
     Set<number>
   >(new Set());
   const [selectedFileErrors, setSelectedFileErrors] = useState<Set<number>>(
     new Set(),
   );
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
   const [invoiceMenu, setInvoiceMenu] = useState<{
     el: HTMLElement | null;
     invoices: any[];
@@ -119,10 +122,9 @@ export default function Expenses() {
   }, []);
 
   const handleSaveExpense = async () => {
-    if (!newExpense.name.trim()) {
-      setNameError(true);
-      return;
-    }
+    if (!newExpense.name.trim()) setNameError(true);
+    if (!newExpense.category.trim()) setCategoryError(true);
+    if (!newExpense.name.trim() || !newExpense.category.trim()) return;
     const badExisting = new Set(
       existingInvoices
         .map((inv, i) => (!inv.name.trim() ? i : -1))
@@ -193,6 +195,7 @@ export default function Expenses() {
     setSelectedFiles([]);
     setExistingInvoices([]);
     setNameError(false);
+    setCategoryError(false);
     setExistingInvoiceErrors(new Set());
     setSelectedFileErrors(new Set());
   };
@@ -213,9 +216,14 @@ export default function Expenses() {
     setOpen(true);
   };
 
-  const handleDeleteExpense = async (id: number) => {
-    if (window.confirm(t("areYouSureDelete"))) {
-      await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+  const handleDeleteExpense = (id: number) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDeleteExpense = async () => {
+    if (deleteConfirmId !== null) {
+      await fetch(`/api/expenses/${deleteConfirmId}`, { method: "DELETE" });
+      setDeleteConfirmId(null);
       fetchExpenses();
     }
   };
@@ -486,6 +494,24 @@ export default function Expenses() {
       </Menu>
 
       <Dialog
+        open={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t("confirmDelete")}</DialogTitle>
+        <DialogContent>
+          <Typography>{t("areYouSureDelete")}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmId(null)}>{t("cancel")}</Button>
+          <Button variant="contained" color="error" onClick={confirmDeleteExpense}>
+            {t("delete")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
         open={open}
         onClose={() => {
           setOpen(false);
@@ -516,14 +542,22 @@ export default function Expenses() {
                 fullWidth
                 options={uniqueCategories}
                 value={newExpense.category}
-                onChange={(_, newValue) =>
-                  setNewExpense({ ...newExpense, category: newValue || "" })
-                }
-                onInputChange={(_, newInputValue) =>
-                  setNewExpense({ ...newExpense, category: newInputValue })
-                }
+                onChange={(_, newValue) => {
+                  setCategoryError(false);
+                  setNewExpense({ ...newExpense, category: newValue || "" });
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setCategoryError(false);
+                  setNewExpense({ ...newExpense, category: newInputValue });
+                }}
                 renderInput={(params) => (
-                  <TextField {...params} label={t("category")} />
+                  <TextField
+                    {...params}
+                    label={t("category")}
+                    required
+                    error={categoryError}
+                    helperText={categoryError ? t("categoryRequired") : ""}
+                  />
                 )}
               />
 
