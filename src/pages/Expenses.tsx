@@ -24,6 +24,9 @@ import {
   Chip,
   Menu,
   Divider,
+  Grid,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   IconPlus as Add,
@@ -49,6 +52,9 @@ import { useDropzone } from "react-dropzone";
 export default function Expenses() {
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isNarrow = useMediaQuery(theme.breakpoints.down("md"));
   const [expenses, setExpenses] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<
@@ -319,10 +325,12 @@ export default function Expenses() {
   const renderTableBody = (items: any[]) =>
     items.map((expense) => (
       <TableRow key={expense.id}>
-        <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+        <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+          {new Date(expense.date).toLocaleDateString()}
+        </TableCell>
         <TableCell>
           <Typography variant="body1">{expense.name}</Typography>
-          <Stack direction="row" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
             {expense.category && (
               <Chip label={expense.category} size="small" variant="outlined" />
             )}
@@ -335,13 +343,32 @@ export default function Expenses() {
               />
             )}
           </Stack>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: { xs: "block", md: "none" }, mt: 0.25 }}
+          >
+            {new Date(expense.date).toLocaleDateString()}
+          </Typography>
         </TableCell>
-        <TableCell>{expense.details}</TableCell>
+        <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+          {expense.details}
+        </TableCell>
         <TableCell align="right" sx={{ fontWeight: 600, color: "error.main" }}>
           {formatCurrency(expense.total_amount || expense.amount)}
         </TableCell>
         <TableCell align="right">
-          <Stack direction="row" spacing={1} justifyContent="flex-end">
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={0.5}
+            justifyContent="flex-end"
+            alignItems="flex-end"
+          >
+            <Tooltip title={t("editExpense")}>
+              <IconButton size="small" onClick={() => handleEditClick(expense)}>
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
             {(expense.invoices || []).length > 0 && (
               <Tooltip title={t("downloadInvoice")}>
                 <IconButton
@@ -354,11 +381,6 @@ export default function Expenses() {
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip title={t("editExpense")}>
-              <IconButton size="small" onClick={() => handleEditClick(expense)}>
-                <Edit fontSize="small" />
-              </IconButton>
-            </Tooltip>
             <Tooltip title={t("deleteExpense")}>
               <IconButton
                 size="small"
@@ -380,17 +402,24 @@ export default function Expenses() {
           display: "flex",
           justifyContent: "space-between",
           mb: 4,
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
         }}
       >
         <Typography variant="h5">{t("expenses")}</Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          useFlexGap
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <TextField
             size="small"
             placeholder={t("searchExpenses")}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            sx={{ minWidth: 240 }}
+            sx={{ minWidth: { xs: "100%", sm: 240 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -399,7 +428,7 @@ export default function Expenses() {
               ),
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
             <InputLabel>{t("filterByCategory")}</InputLabel>
             <Select
               value={filterCategory}
@@ -414,7 +443,7 @@ export default function Expenses() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 170 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
             <InputLabel>{t("groupBy")}</InputLabel>
             <Select
               value={groupBy}
@@ -431,6 +460,7 @@ export default function Expenses() {
           <Button
             variant="contained"
             startIcon={<Add />}
+            fullWidth={isMobile}
             onClick={() => setOpen(true)}
           >
             {t("addExpense")}
@@ -438,13 +468,17 @@ export default function Expenses() {
         </Stack>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t("date")}</TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("date")}
+              </TableCell>
               <TableCell>{t("expenseName")}</TableCell>
-              <TableCell>{t("details")}</TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("details")}
+              </TableCell>
               <TableCell align="right">{t("amount")}</TableCell>
               <TableCell align="right">{t("actions")}</TableCell>
             </TableRow>
@@ -460,7 +494,7 @@ export default function Expenses() {
                   return (
                     <React.Fragment key={key}>
                       <TableRow sx={{ bgcolor: "action.hover" }}>
-                        <TableCell colSpan={3}>
+                        <TableCell colSpan={isNarrow ? 1 : 3}>
                           <Typography
                             variant="subtitle2"
                             sx={{ fontWeight: 700 }}
@@ -481,7 +515,7 @@ export default function Expenses() {
                             variant="subtitle2"
                             sx={{ fontWeight: 700, color: "error.main" }}
                           >
-                            -{formatCurrency(groupTotal)}
+                            {formatCurrency(groupTotal)}
                           </Typography>
                         </TableCell>
                         <TableCell />
@@ -533,8 +567,14 @@ export default function Expenses() {
           <Typography>{t("areYouSureDelete")}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmId(null)}>{t("cancel")}</Button>
-          <Button variant="contained" color="error" onClick={confirmDeleteExpense}>
+          <Button onClick={() => setDeleteConfirmId(null)}>
+            {t("cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={confirmDeleteExpense}
+          >
             {t("delete")}
           </Button>
         </DialogActions>
@@ -565,7 +605,7 @@ export default function Expenses() {
               }}
             />
 
-            <Stack direction="row" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Autocomplete
                 freeSolo
                 fullWidth
@@ -607,39 +647,47 @@ export default function Expenses() {
               />
             </Stack>
 
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label={t("quantity")}
-                type="number"
-                fullWidth
-                value={newExpense.quantity}
-                onChange={(e) =>
-                  setNewExpense({
-                    ...newExpense,
-                    quantity: parseFloat(e.target.value) || 1,
-                  })
-                }
-                inputProps={{ step: "0.01" }}
-              />
-              <TextField
-                label={t("amount")}
-                type="number"
-                fullWidth
-                value={newExpense.amount}
-                onChange={(e) =>
-                  setNewExpense({
-                    ...newExpense,
-                    amount: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-              <TextField
-                label={t("totalPrice")}
-                fullWidth
-                value={formatCurrency(newExpense.amount * newExpense.quantity)}
-                disabled
-              />
-            </Stack>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  label={t("quantity")}
+                  type="number"
+                  fullWidth
+                  value={newExpense.quantity}
+                  onChange={(e) =>
+                    setNewExpense({
+                      ...newExpense,
+                      quantity: parseFloat(e.target.value) || 1,
+                    })
+                  }
+                  inputProps={{ step: "0.01" }}
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  label={t("amount")}
+                  type="number"
+                  fullWidth
+                  value={newExpense.amount}
+                  onChange={(e) =>
+                    setNewExpense({
+                      ...newExpense,
+                      amount: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label={t("totalPrice")}
+                  fullWidth
+                  value={formatCurrency(
+                    newExpense.amount * newExpense.quantity,
+                  )}
+                  disabled
+                />
+              </Grid>
+            </Grid>
 
             <TextField
               label={t("details")}

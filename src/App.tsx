@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Drawer,
@@ -15,6 +15,9 @@ import {
   ThemeProvider,
   createTheme,
   Link,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { version as pkgVersion } from "../package.json";
 const version = import.meta.env.VITE_APP_VERSION || pkgVersion;
@@ -25,6 +28,7 @@ import {
   IconReceipt2 as ExpensesIcon,
   IconTrendingUp as SalesIcon,
   IconSettings as SettingsIcon,
+  IconMenu2 as MenuIcon,
 } from "@tabler/icons-react";
 import {
   BrowserRouter,
@@ -88,6 +92,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const menuItems = [
     { text: t("dashboard"), icon: <DashboardIcon />, path: "/" },
@@ -112,6 +119,16 @@ function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon size={20} />
+            </IconButton>
+          )}
           <Box>
             <Typography
               variant="h6"
@@ -119,7 +136,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               component="div"
               sx={{ fontWeight: 700, color: "primary.main" }}
             >
-              INVENTRA <span style={{ color: "#f27d26" }}>OMS</span>
+              INVENTRA <span style={{ color: "#10B981" }}>OMS</span>
             </Typography>
             <Typography
               variant="body2"
@@ -133,7 +150,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         </Toolbar>
       </AppBar>
       <Drawer
-        variant="permanent"
+        variant={isMobile ? "temporary" : "permanent"}
+        open={isMobile ? mobileOpen : true}
+        onClose={() => setMobileOpen(false)}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -158,7 +177,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               {menuItems.map((item) => (
                 <ListItem key={item.text} disablePadding>
                   <ListItemButton
-                    onClick={() => navigate(item.path)}
+                    onClick={() => { navigate(item.path); setMobileOpen(false); }}
                     selected={location.pathname === item.path}
                     sx={{
                       mx: 1,
@@ -211,7 +230,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           minHeight: "100vh",
           bgcolor: "background.default",
         }}

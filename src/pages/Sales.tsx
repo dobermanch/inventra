@@ -24,6 +24,8 @@ import {
   Button,
   Divider,
   Grid,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { IconSearch as Search } from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
@@ -38,6 +40,9 @@ import {
 export default function Sales() {
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isNarrow = useMediaQuery(theme.breakpoints.down("md"));
   const [orders, setOrders] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchText, setSearchText] = useState("");
@@ -137,7 +142,7 @@ export default function Sales() {
           sx={{ cursor: "pointer" }}
           onClick={() => setViewOrder(order)}
         >
-          <TableCell>
+          <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
             {new Date(order.created_at).toLocaleDateString()}
           </TableCell>
           <TableCell>#{order.id}</TableCell>
@@ -154,15 +159,30 @@ export default function Sales() {
             <Typography variant="caption" color="text.secondary">
               {customer.email}
             </Typography>
+            <Box sx={{ display: { xs: "block", md: "none" }, mt: 0.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block" }}
+              >
+                {new Date(order.created_at).toLocaleDateString()}
+              </Typography>
+              <Chip
+                label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
+                size="small"
+                variant="outlined"
+                color={getStatusColor(order.status) as any}
+              />
+            </Box>
           </TableCell>
-          <TableCell>
+          <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
             {order.items.map((item: any) => (
               <Typography key={item.id} variant="caption" display="block">
                 {item.name} ({item.size}) x{item.quantity}
               </Typography>
             ))}
           </TableCell>
-          <TableCell>
+          <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
             <Chip
               label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
               size="small"
@@ -188,19 +208,25 @@ export default function Sales() {
           display: "flex",
           justifyContent: "space-between",
           mb: 4,
-          alignItems: "center",
-          flexWrap: "wrap",
+          alignItems: { xs: "flex-start", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
           gap: 2,
         }}
       >
         <Typography variant="h5">{t("salesHistory")}</Typography>
-        <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap alignItems="center">
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          useFlexGap
+          alignItems={{ xs: "stretch", sm: "center" }}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <TextField
             size="small"
             placeholder={t("searchSales")}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            sx={{ minWidth: 240 }}
+            sx={{ minWidth: { xs: "100%", sm: 240 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -209,7 +235,7 @@ export default function Sales() {
               ),
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 170 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
             <InputLabel>{t("filterByStatus")}</InputLabel>
             <Select
               value={filterStatus}
@@ -224,7 +250,7 @@ export default function Sales() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 160 } }}>
             <InputLabel>{t("groupBy")}</InputLabel>
             <Select
               value={groupBy}
@@ -239,22 +265,26 @@ export default function Sales() {
           </FormControl>
           <Paper sx={{ px: 2, py: 1, bgcolor: "primary.main", color: "white" }}>
             <Typography variant="caption">{t("totalRevenue")}</Typography>
-            <Typography variant="h6">
-              {formatCurrency(totalRevenue)}
-            </Typography>
+            <Typography variant="h6">{formatCurrency(totalRevenue)}</Typography>
           </Paper>
         </Stack>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t("date")}</TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("date")}
+              </TableCell>
               <TableCell>{t("orderId")}</TableCell>
               <TableCell>{t("customerName")}</TableCell>
-              <TableCell>{t("items")}</TableCell>
-              <TableCell>{t("status")}</TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("items")}
+              </TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("status")}
+              </TableCell>
               <TableCell align="right">{t("amount")}</TableCell>
             </TableRow>
           </TableHead>
@@ -272,7 +302,7 @@ export default function Sales() {
                   return (
                     <Fragment key={key}>
                       <TableRow sx={{ bgcolor: "action.hover" }}>
-                        <TableCell colSpan={4}>
+                        <TableCell colSpan={isNarrow ? 2 : 5}>
                           <Typography
                             variant="subtitle2"
                             sx={{ fontWeight: 700 }}
@@ -288,7 +318,6 @@ export default function Sales() {
                             </Typography>
                           </Typography>
                         </TableCell>
-                        <TableCell />
                         <TableCell align="right">
                           <Typography
                             variant="subtitle2"
@@ -365,7 +394,8 @@ export default function Sales() {
                 </Box>
 
                 <Typography variant="caption" color="text.secondary">
-                  {t("date")}: {new Date(viewOrder.created_at).toLocaleDateString()}
+                  {t("date")}:{" "}
+                  {new Date(viewOrder.created_at).toLocaleDateString()}
                 </Typography>
 
                 {viewOrder.notes && (
@@ -410,11 +440,13 @@ export default function Sales() {
                         {t("subtotal")}
                       </Typography>
                       <Typography variant="body2">
-                        {formatCurrency(viewOrder.items.reduce(
-                          (sum: number, item: any) =>
-                            sum + item.unit_price * item.quantity,
-                          0,
-                        ))}
+                        {formatCurrency(
+                          viewOrder.items.reduce(
+                            (sum: number, item: any) =>
+                              sum + item.unit_price * item.quantity,
+                            0,
+                          ),
+                        )}
                       </Typography>
                     </Stack>
                     <Stack direction="row" justifyContent="space-between">

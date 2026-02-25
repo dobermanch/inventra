@@ -1,6 +1,6 @@
 # Inventra
 
-[![CI](https://github.com/dobermanch/inventra/actions/workflows/ci.yml/badge.svg)](https://github.com/dobermanch/inventra/actions/workflows/build.yml) [![Release](https://github.com/dobermanch/inventra/actions/workflows/release.yml/badge.svg)](https://github.com/dobermanch/inventra/actions/workflows/release.yml) [![License: MIT](https://img.shields.io/github/license/dobermanch/inventra)](LICENSE)
+[![CI](https://github.com/dobermanch/inventra/actions/workflows/build.yml/badge.svg)](https://github.com/dobermanch/inventra/actions/workflows/build.yml) [![Release](https://github.com/dobermanch/inventra/actions/workflows/release.yml/badge.svg)](https://github.com/dobermanch/inventra/actions/workflows/release.yml) [![License: MIT](https://img.shields.io/github/license/dobermanch/inventra)](LICENSE)
 
 
 A lightweight, self-hosted inventory and business management app.

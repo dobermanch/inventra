@@ -206,7 +206,7 @@ export default function Dashboard() {
                   const customer = JSON.parse(order.customer_details);
                   return (
                     <React.Fragment key={order.id}>
-                      <ListItem sx={{ px: 0 }} alignItems="flex-start">
+                      <ListItem sx={{ px: 0 }}>
                         <ListItemText
                           primary={
                             <Stack
@@ -226,6 +226,7 @@ export default function Dashboard() {
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
+                                sx={{ display: { xs: "none", md: "block" } }}
                               >
                                 {customer.phone}
                               </Typography>
@@ -282,7 +283,7 @@ export default function Dashboard() {
               <List disablePadding>
                 {stats.recentExpenses.map((expense: any, i: number) => (
                   <React.Fragment key={expense.id}>
-                    <ListItem sx={{ px: 0 }} alignItems="flex-start">
+                    <ListItem sx={{ px: 0 }}>
                       <ListItemText
                         primary={
                           <Stack
@@ -297,6 +298,7 @@ export default function Dashboard() {
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
+                                sx={{ display: { xs: "none", md: "block" } }}
                               >
                                 {expense.category}
                                 {expense.subcategory
@@ -318,7 +320,10 @@ export default function Dashboard() {
                           variant="body2"
                           sx={{ fontWeight: 600, color: "error.main" }}
                         >
-                          -{formatCurrency(expense.total_amount || expense.amount)}
+                          -
+                          {formatCurrency(
+                            expense.total_amount || expense.amount,
+                          )}
                         </Typography>
                       </Stack>
                     </ListItem>

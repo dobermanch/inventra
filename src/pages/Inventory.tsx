@@ -23,6 +23,8 @@ import {
   Autocomplete,
   InputAdornment,
   Divider,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   IconPlus as Add,
@@ -39,6 +41,8 @@ import { useCurrency } from "../context/CurrencyContext";
 export default function Inventory() {
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [items, setItems] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
@@ -193,17 +197,23 @@ export default function Inventory() {
           display: "flex",
           justifyContent: "space-between",
           mb: 4,
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
         }}
       >
         <Typography variant="h5">{t("inventoryManagement")}</Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <TextField
             size="small"
             placeholder={t("searchInventory")}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            sx={{ minWidth: 240 }}
+            sx={{ minWidth: { xs: "100%", sm: 240 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -212,7 +222,7 @@ export default function Inventory() {
               ),
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
             <InputLabel>{t("filterByCategory")}</InputLabel>
             <Select
               value={categoryFilter ?? "all"}
@@ -234,6 +244,7 @@ export default function Inventory() {
           <Button
             variant="contained"
             startIcon={<Add />}
+            fullWidth={isMobile}
             onClick={() => {
               resetDialog();
               setOpen(true);
@@ -423,56 +434,62 @@ export default function Inventory() {
                 setNewItem({ ...newItem, description: e.target.value })
               }
             />
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Autocomplete
-                freeSolo
-                fullWidth
-                options={categories.map((c) => c.name)}
-                value={newItem.category_name}
-                onChange={(_, newValue) => {
-                  setCategoryError(false);
-                  setNewItem({ ...newItem, category_name: newValue || "" });
-                }}
-                onInputChange={(_, newInputValue) => {
-                  setCategoryError(false);
-                  setNewItem({ ...newItem, category_name: newInputValue });
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t("category")}
-                    required
-                    error={categoryError}
-                    helperText={categoryError ? t("categoryRequired") : ""}
-                  />
-                )}
-              />
-              <TextField
-                label={t("price")}
-                fullWidth
-                type="number"
-                value={newItem.price}
-                onChange={(e) =>
-                  setNewItem({
-                    ...newItem,
-                    price: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-              <TextField
-                label={t("lowStockThreshold")}
-                fullWidth
-                type="number"
-                value={newItem.low_stock_threshold}
-                onChange={(e) =>
-                  setNewItem({
-                    ...newItem,
-                    low_stock_threshold: parseInt(e.target.value) || 0,
-                  })
-                }
-                inputProps={{ min: 0 }}
-              />
-            </Box>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12 }}>
+                <Autocomplete
+                  freeSolo
+                  fullWidth
+                  options={categories.map((c) => c.name)}
+                  value={newItem.category_name}
+                  onChange={(_, newValue) => {
+                    setCategoryError(false);
+                    setNewItem({ ...newItem, category_name: newValue || "" });
+                  }}
+                  onInputChange={(_, newInputValue) => {
+                    setCategoryError(false);
+                    setNewItem({ ...newItem, category_name: newInputValue });
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t("category")}
+                      required
+                      error={categoryError}
+                      helperText={categoryError ? t("categoryRequired") : ""}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  label={t("price")}
+                  fullWidth
+                  type="number"
+                  value={newItem.price}
+                  onChange={(e) =>
+                    setNewItem({
+                      ...newItem,
+                      price: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  label={t("lowStockThreshold")}
+                  fullWidth
+                  type="number"
+                  value={newItem.low_stock_threshold}
+                  onChange={(e) =>
+                    setNewItem({
+                      ...newItem,
+                      low_stock_threshold: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+            </Grid>
 
             <Divider sx={{ my: 2 }} />
 

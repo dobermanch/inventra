@@ -30,6 +30,8 @@ import {
   InputLabel,
   Select,
   InputAdornment,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   IconPlus as Add,
@@ -53,6 +55,9 @@ import {
 export default function Orders() {
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isNarrow = useMediaQuery(theme.breakpoints.down("md"));
   const [orders, setOrders] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -260,15 +265,26 @@ export default function Orders() {
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ display: "block" }}
+            sx={{ display: { xs: "none", md: "block" } }}
           >
             {JSON.parse(order.customer_details).phone}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
             {JSON.parse(order.customer_details).email}
           </Typography>
+          <Box sx={{ display: { xs: "block", md: "none" }, mt: 0.5 }}>
+            <Chip
+              label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
+              size="small"
+              color={getStatusColor(order.status) as any}
+            />
+          </Box>
         </TableCell>
-        <TableCell>
+        <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
           {order.items.map((item: any) => (
             <Typography key={item.id} variant="body2">
               {item.name} ({item.size}) x{item.quantity}
@@ -285,7 +301,7 @@ export default function Orders() {
           )}
         </TableCell>
         <TableCell>{formatCurrency(order.total_amount)}</TableCell>
-        <TableCell>
+        <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
           <Chip
             label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
             size="small"
@@ -354,19 +370,24 @@ export default function Orders() {
           display: "flex",
           justifyContent: "space-between",
           mb: 4,
-          alignItems: "center",
-          flexWrap: "wrap",
+          alignItems: { xs: "flex-start", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
           gap: 2,
         }}
       >
         <Typography variant="h5">{t("orderManagement")}</Typography>
-        <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          useFlexGap
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <TextField
             size="small"
             placeholder={t("searchOrders")}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            sx={{ minWidth: 240 }}
+            sx={{ minWidth: { xs: "100%", sm: 240 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -375,7 +396,7 @@ export default function Orders() {
               ),
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 170 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
             <InputLabel>{t("filterByStatus")}</InputLabel>
             <Select
               value={filterStatus}
@@ -390,7 +411,7 @@ export default function Orders() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 160 } }}>
             <InputLabel>{t("groupBy")}</InputLabel>
             <Select
               value={groupBy}
@@ -406,6 +427,7 @@ export default function Orders() {
           <Button
             variant="contained"
             startIcon={<Add />}
+            fullWidth={isMobile}
             onClick={() => setOpen(true)}
           >
             {t("newOrder")}
@@ -413,15 +435,19 @@ export default function Orders() {
         </Stack>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>{t("orderId")}</TableCell>
               <TableCell>{t("customerName")}</TableCell>
-              <TableCell>{t("items")}</TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("items")}
+              </TableCell>
               <TableCell>{t("total")}</TableCell>
-              <TableCell>{t("status")}</TableCell>
+              <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                {t("status")}
+              </TableCell>
               <TableCell align="right">{t("actions")}</TableCell>
             </TableRow>
           </TableHead>
@@ -436,7 +462,7 @@ export default function Orders() {
                   return (
                     <React.Fragment key={key}>
                       <TableRow sx={{ bgcolor: "action.hover" }}>
-                        <TableCell colSpan={3}>
+                        <TableCell colSpan={isNarrow ? 2 : 3}>
                           <Typography
                             variant="subtitle2"
                             sx={{ fontWeight: 700 }}
@@ -481,7 +507,9 @@ export default function Orders() {
         maxWidth="md"
       >
         <DialogTitle>
-          {newOrder.id ? `${t("editOrderPrefix")}${newOrder.id}` : t("createNewOrder")}
+          {newOrder.id
+            ? `${t("editOrderPrefix")}${newOrder.id}`
+            : t("createNewOrder")}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -506,7 +534,7 @@ export default function Orders() {
                 });
               }}
             />
-            <Stack direction="row" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 label={t("phone")}
                 fullWidth
@@ -598,7 +626,7 @@ export default function Orders() {
             <Typography variant="subtitle2" gutterBottom>
               {t("addItems")}
             </Typography>
-            <Stack direction="row" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Autocomplete
                 options={allVariants}
                 fullWidth
@@ -688,10 +716,12 @@ export default function Orders() {
                     {t("subtotal")}
                   </Typography>
                   <Typography variant="body2">
-                    {formatCurrency(newOrder.items.reduce(
-                      (sum, item) => sum + item.unit_price * item.quantity,
-                      0,
-                    ))}
+                    {formatCurrency(
+                      newOrder.items.reduce(
+                        (sum, item) => sum + item.unit_price * item.quantity,
+                        0,
+                      ),
+                    )}
                   </Typography>
                 </Stack>
                 {newOrder.discount > 0 && (
@@ -711,13 +741,15 @@ export default function Orders() {
                 >
                   <Typography variant="subtitle2">{t("total")}</Typography>
                   <Typography variant="subtitle2" color="primary">
-                    {formatCurrency(Math.max(
-                      0,
-                      newOrder.items.reduce(
-                        (sum, item) => sum + item.unit_price * item.quantity,
+                    {formatCurrency(
+                      Math.max(
                         0,
-                      ) - newOrder.discount,
-                    ))}
+                        newOrder.items.reduce(
+                          (sum, item) => sum + item.unit_price * item.quantity,
+                          0,
+                        ) - newOrder.discount,
+                      ),
+                    )}
                   </Typography>
                 </Stack>
               </Box>
