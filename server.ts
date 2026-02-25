@@ -307,13 +307,8 @@ async function startServer() {
         .all() as any[];
 
       const salesTrends = salesTrendsRaw.reverse().map((row: any) => {
-        const [year, month] = row.month.split("-");
-        const date = new Date(parseInt(year), parseInt(month) - 1);
         return {
-          name: date.toLocaleDateString("en-US", {
-            month: "short",
-            year: "2-digit",
-          }),
+          name: row.month,
           sales: row.total || 0,
         };
       });

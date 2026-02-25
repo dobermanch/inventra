@@ -110,14 +110,24 @@ function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Toolbar>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ fontWeight: 700, color: "primary.main" }}
-          >
-            STOKLY <span style={{ color: "#f27d26" }}>OMS</span>
-          </Typography>
+          <Box>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ fontWeight: 700, color: "primary.main" }}
+            >
+              STOKLY <span style={{ color: "#f27d26" }}>OMS</span>
+            </Typography>
+            <Typography
+              variant="body2"
+              noWrap
+              component="div"
+              sx={{ fontWeight: 500, color: "primary.secondary" }}
+            >
+              {t("appMotto")}
+            </Typography>
+          </Box>
         </Toolbar>
       </AppBar>
       <Drawer

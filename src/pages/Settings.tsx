@@ -29,7 +29,7 @@ export default function Settings() {
               {t("language")}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Choose your preferred language for the interface.
+              {t("chooseLanguageDescription")}
             </Typography>
             <FormControl fullWidth>
               <InputLabel>{t("language")}</InputLabel>
@@ -51,7 +51,7 @@ export default function Settings() {
               {t("currency")}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Default currency for sales and expenses.
+              {t("defaultCurrencyDescription")}
             </Typography>
             <FormControl fullWidth>
               <InputLabel>{t("currency")}</InputLabel>

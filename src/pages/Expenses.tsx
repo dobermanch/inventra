@@ -256,9 +256,9 @@ export default function Expenses() {
       case "monthYear":
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
       case "subcategory":
-        return expense.subcategory || "Uncategorized";
+        return expense.subcategory || t("uncategorized");
       case "category":
-        return expense.category || "Uncategorized";
+        return expense.category || t("uncategorized");
       default:
         return "";
     }

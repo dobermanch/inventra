@@ -38,7 +38,18 @@ import {
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = language === "ua" ? "uk-UA" : "en-US";
+  const formatMonth = (raw: string) => {
+    const [year, month] = raw.split("-");
+    return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(
+      locale,
+      {
+        month: "short",
+        year: "2-digit",
+      },
+    );
+  };
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -46,7 +57,7 @@ export default function Dashboard() {
       .then((data) => setStats(data));
   }, []);
 
-  if (!stats) return <Typography>Loading...</Typography>;
+  if (!stats) return <Typography>{t("loading")}</Typography>;
 
   const summaryCards = [
     {
@@ -138,13 +149,18 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="90%">
                 <BarChart data={stats.salesTrends}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={formatMonth}
+                  />
                   <YAxis axisLine={false} tickLine={false} />
                   <Tooltip
                     cursor={{ fill: "#f5f5f5" }}
                     formatter={(value: any) => [
                       `$${Number(value).toLocaleString()}`,
-                      "Sales",
+                      t("salesChartLabel"),
                     ]}
                   />
                   <Bar
@@ -165,7 +181,7 @@ export default function Dashboard() {
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  No sales data yet
+                  {t("noSalesData")}
                 </Typography>
               </Box>
             )}
@@ -252,7 +268,7 @@ export default function Dashboard() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, height: 430, overflow: "auto" }}>
             <Typography variant="h6" gutterBottom>
               {t("recentExpenses")}
             </Typography>
@@ -316,7 +332,7 @@ export default function Dashboard() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, height: 400, overflow: "auto" }}>
+          <Paper sx={{ p: 3, height: 430, overflow: "auto" }}>
             <Typography variant="h6" gutterBottom>
               {t("lowStockAlerts")}
             </Typography>
@@ -331,10 +347,10 @@ export default function Dashboard() {
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
                         primary={item.name}
-                        secondary={`Size: ${item.size || "N/A"}`}
+                        secondary={`${t("size")}: ${item.size || t("naValue")}`}
                       />
                       <Chip
-                        label={`${item.stock_count} left`}
+                        label={`${item.stock_count} ${t("stockLeft")}`}
                         size="small"
                         color="error"
                         variant="outlined"

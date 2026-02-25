@@ -22,6 +22,7 @@ import {
   Select,
   Autocomplete,
   InputAdornment,
+  Divider,
 } from "@mui/material";
 import {
   Add,
@@ -48,7 +49,9 @@ export default function Inventory() {
   const [nameError, setNameError] = useState(false);
   const [categoryError, setCategoryError] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    [],
+  );
   const [searchText, setSearchText] = useState("");
 
   const [newItem, setNewItem] = useState<any>({
@@ -214,7 +217,7 @@ export default function Inventory() {
               label={t("filterByCategory")}
               onChange={(e) =>
                 setCategoryFilter(
-                  e.target.value === "all" ? null : e.target.value as string,
+                  e.target.value === "all" ? null : (e.target.value as string),
                 )
               }
             >
@@ -240,107 +243,124 @@ export default function Inventory() {
       </Box>
 
       <Grid container spacing={3}>
-        {items.filter((item) => {
-          if (categoryFilter !== null && item.category_name !== categoryFilter) return false;
-          if (searchText.trim()) {
-            const lower = searchText.toLowerCase();
-            const haystack = [item.name, item.description || ""].join(" ").toLowerCase();
-            if (!haystack.includes(lower)) return false;
-          }
-          return true;
-        }).map((item) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
-            <Card
-              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-            >
-              <CardMedia
-                component="img"
-                sx={{ height: 200, objectFit: "contain" }}
-                image={
-                  item.picture_url ||
-                  "https://picsum.photos/seed/inventory/400/200"
-                }
-                alt={item.name}
-              />
-              <CardContent
-                sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+        {items
+          .filter((item) => {
+            if (
+              categoryFilter !== null &&
+              item.category_name !== categoryFilter
+            )
+              return false;
+            if (searchText.trim()) {
+              const lower = searchText.toLowerCase();
+              const haystack = [item.name, item.description || ""]
+                .join(" ")
+                .toLowerCase();
+              if (!haystack.includes(lower)) return false;
+            }
+            return true;
+          })
+          .map((item) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
               >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    mb: 1,
-                  }}
+                <CardMedia
+                  component="img"
+                  sx={{ height: 200, objectFit: "contain" }}
+                  image={
+                    item.picture_url ||
+                    "https://picsum.photos/seed/inventory/400/200"
+                  }
+                  alt={item.name}
+                />
+                <CardContent
+                  sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
                 >
-                  <Box sx={{ flex: 1, mr: 1 }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        lineHeight: 1.2,
-                        mb: 0.5,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        height: "2.4em",
-                      }}
-                    >
-                      {item.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.category_name} • ${item.price?.toLocaleString()}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", gap: 0.5 }}>
-                    <Tooltip title={t("editItem")}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditClick(item)}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 1,
+                    }}
+                  >
+                    <Box sx={{ flex: 1, mr: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          lineHeight: 1.2,
+                          mb: 0.5,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          height: "2.4em",
+                        }}
                       >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t("deleteItem")}>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Box>
-
-                <Box sx={{ mt: "auto" }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    {t("stockBySize")}:
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {item.variants.map((v: any) => (
-                      <Tooltip key={v.id} title={t("restockItem")}>
-                        <Chip
-                          label={`${v.size}: ${v.stock_count}`}
+                        {item.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.category_name} • ${item.price?.toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                      <Tooltip title={t("editItem")}>
+                        <IconButton
                           size="small"
-                          color={
-                            v.stock_count <= item.low_stock_threshold
-                              ? "error"
-                              : "default"
-                          }
-                          onClick={() => {
-                            setSelectedVariant(v);
-                            setRestockOpen(true);
-                          }}
-                        />
+                          onClick={() => handleEditClick(item)}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
                       </Tooltip>
-                    ))}
-                  </Stack>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                      <Tooltip title={t("deleteItem")}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteItem(item.id)}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ mt: "auto" }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t("stockBySize")}:
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      flexWrap="wrap"
+                      useFlexGap
+                    >
+                      {item.variants.map((v: any) => (
+                        <Tooltip key={v.id} title={t("restockItem")}>
+                          <Chip
+                            label={`${v.size}: ${v.stock_count}`}
+                            size="small"
+                            color={
+                              v.stock_count <= item.low_stock_threshold
+                                ? "error"
+                                : "default"
+                            }
+                            onClick={() => {
+                              setSelectedVariant(v);
+                              setRestockOpen(true);
+                            }}
+                          />
+                        </Tooltip>
+                      ))}
+                    </Stack>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
       </Grid>
 
       {/* Delete Confirmation Dialog */}
@@ -355,7 +375,9 @@ export default function Inventory() {
           <Typography>{t("areYouSureDelete")}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmId(null)}>{t("cancel")}</Button>
+          <Button onClick={() => setDeleteConfirmId(null)}>
+            {t("cancel")}
+          </Button>
           <Button variant="contained" color="error" onClick={confirmDeleteItem}>
             {t("delete")}
           </Button>
@@ -373,16 +395,16 @@ export default function Inventory() {
         maxWidth="sm"
       >
         <DialogTitle>
-          {newItem.id ? "Edit Inventory Item" : "Add New Inventory Item"}
+          {newItem.id ? t("editInventoryItem") : t("addNewInventoryItem")}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Item Name"
+              label={t("itemName")}
               fullWidth
               required
               error={nameError}
-              helperText={nameError ? "Item name is required" : ""}
+              helperText={nameError ? t("itemNameRequired") : ""}
               value={newItem.name}
               onChange={(e) => {
                 setNameError(false);
@@ -390,7 +412,7 @@ export default function Inventory() {
               }}
             />
             <TextField
-              label="Description"
+              label={t("description")}
               fullWidth
               multiline
               rows={5}
@@ -424,7 +446,7 @@ export default function Inventory() {
                 )}
               />
               <TextField
-                label="Price"
+                label={t("price")}
                 fullWidth
                 type="number"
                 value={newItem.price}
@@ -450,9 +472,11 @@ export default function Inventory() {
               />
             </Box>
 
+            <Divider sx={{ my: 2 }} />
+
             <Box>
               <Typography variant="subtitle2" gutterBottom>
-                Product Image
+                {t("productImage")}
               </Typography>
               {previewUrl && (
                 <Box
@@ -477,7 +501,7 @@ export default function Inventory() {
                 startIcon={<CloudUpload />}
                 fullWidth
               >
-                {selectedFile ? selectedFile.name : "Upload Image"}
+                {selectedFile ? selectedFile.name : t("uploadImage")}
                 <input
                   type="file"
                   hidden
@@ -494,7 +518,7 @@ export default function Inventory() {
                 />
               </Button>
               <TextField
-                label="Or Image URL"
+                label={t("orImageUrl")}
                 fullWidth
                 hidden
                 size="small"
@@ -507,13 +531,13 @@ export default function Inventory() {
               />
             </Box>
 
-            <Typography variant="subtitle2">
-              Variants (Sizes & Initial Stock)
-            </Typography>
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="subtitle2">{t("variantsTitle")}</Typography>
             {newItem.variants.map((v, i) => (
               <Box key={i} sx={{ display: "flex", gap: 1 }}>
                 <TextField
-                  label="Size"
+                  label={t("size")}
                   size="small"
                   fullWidth
                   value={v.size}
@@ -524,7 +548,7 @@ export default function Inventory() {
                   }}
                 />
                 <TextField
-                  label="Stock"
+                  label={t("stock")}
                   size="small"
                   fullWidth
                   type="number"
@@ -546,7 +570,7 @@ export default function Inventory() {
                 })
               }
             >
-              Add Variant
+              {t("addVariant")}
             </Button>
           </Stack>
         </DialogContent>
@@ -567,15 +591,15 @@ export default function Inventory() {
 
       {/* Restock Dialog */}
       <Dialog open={restockOpen} onClose={() => setRestockOpen(false)}>
-        <DialogTitle>Restock Item</DialogTitle>
+        <DialogTitle>{t("restockItemTitle")}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" gutterBottom>
-            Adding stock for size: <strong>{selectedVariant?.size}</strong>
+            {t("addingStockForSize")} <strong>{selectedVariant?.size}</strong>
           </Typography>
           <TextField
             autoFocus
             margin="dense"
-            label="Quantity to Add"
+            label={t("quantityToAdd")}
             type="number"
             fullWidth
             value={restockQty}
@@ -583,9 +607,9 @@ export default function Inventory() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRestockOpen(false)}>Cancel</Button>
+          <Button onClick={() => setRestockOpen(false)}>{t("cancel")}</Button>
           <Button variant="contained" onClick={handleRestock}>
-            Add Stock
+            {t("addStock")}
           </Button>
         </DialogActions>
       </Dialog>

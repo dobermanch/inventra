@@ -415,7 +415,7 @@ export default function Orders() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Order ID</TableCell>
+              <TableCell>{t("orderId")}</TableCell>
               <TableCell>{t("customerName")}</TableCell>
               <TableCell>{t("items")}</TableCell>
               <TableCell>{t("total")}</TableCell>
@@ -479,19 +479,19 @@ export default function Orders() {
         maxWidth="md"
       >
         <DialogTitle>
-          {newOrder.id ? `Edit Order #${newOrder.id}` : "Create New Order"}
+          {newOrder.id ? `${t("editOrderPrefix")}${newOrder.id}` : t("createNewOrder")}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Customer Details
+              {t("customerDetails")}
             </Typography>
             <TextField
-              label="Name"
+              label={t("name")}
               fullWidth
               required
               error={formErrors.name}
-              helperText={formErrors.name ? "Name is required" : ""}
+              helperText={formErrors.name ? t("nameRequired") : ""}
               value={newOrder.customer_details.name}
               onChange={(e) => {
                 setFormErrors((prev) => ({ ...prev, name: false }));
@@ -506,11 +506,11 @@ export default function Orders() {
             />
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Phone"
+                label={t("phone")}
                 fullWidth
                 required
                 error={formErrors.phone}
-                helperText={formErrors.phone ? "Phone is required" : ""}
+                helperText={formErrors.phone ? t("phoneRequired") : ""}
                 value={newOrder.customer_details.phone}
                 onChange={(e) => {
                   setFormErrors((prev) => ({ ...prev, phone: false }));
@@ -525,7 +525,7 @@ export default function Orders() {
               />
 
               <TextField
-                label="Email"
+                label={t("email")}
                 fullWidth
                 value={newOrder.customer_details.email}
                 onChange={(e) =>
@@ -540,11 +540,11 @@ export default function Orders() {
               />
             </Stack>
             <TextField
-              label="Address"
+              label={t("address")}
               fullWidth
               required
               error={formErrors.address}
-              helperText={formErrors.address ? "Address is required" : ""}
+              helperText={formErrors.address ? t("addressRequired") : ""}
               multiline
               rows={5}
               value={newOrder.customer_details.address}
@@ -560,7 +560,7 @@ export default function Orders() {
               }}
             />
             <TextField
-              label="Notes"
+              label={t("notes")}
               fullWidth
               multiline
               rows={5}
@@ -594,7 +594,7 @@ export default function Orders() {
           </Stack>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Add Items
+              {t("addItems")}
             </Typography>
             <Stack direction="row" spacing={2}>
               <Autocomplete
@@ -602,7 +602,7 @@ export default function Orders() {
                 fullWidth
                 getOptionLabel={(option) => option.label}
                 renderInput={(params) => (
-                  <TextField {...params} label="Search Item" />
+                  <TextField {...params} label={t("searchItem")} />
                 )}
                 onChange={(e, value) => {
                   if (value) {
@@ -623,7 +623,7 @@ export default function Orders() {
                 }}
               />
               <TextField
-                label="Discount"
+                label={t("discount")}
                 type="number"
                 fullWidth
                 value={newOrder.discount}
@@ -641,7 +641,7 @@ export default function Orders() {
                 <ListItem key={i} sx={{ px: 0 }}>
                   <ListItemText primary={`${item.name} (${item.size})`} />
                   <TextField
-                    label="Qty"
+                    label={t("qty")}
                     type="number"
                     sx={{ width: 70, mr: 1 }}
                     value={item.quantity}
@@ -652,7 +652,7 @@ export default function Orders() {
                     }}
                   />
                   <TextField
-                    label="Price"
+                    label={t("price")}
                     type="number"
                     sx={{ width: 100, mr: 1 }}
                     value={item.unit_price}
@@ -683,7 +683,7 @@ export default function Orders() {
               <Box sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: "divider" }}>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography variant="body2" color="text.secondary">
-                    Subtotal
+                    {t("subtotal")}
                   </Typography>
                   <Typography variant="body2">
                     $
@@ -698,7 +698,7 @@ export default function Orders() {
                 {newOrder.discount > 0 && (
                   <Stack direction="row" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Discount
+                      {t("discount")}
                     </Typography>
                     <Typography variant="body2" color="error">
                       -${newOrder.discount.toFixed(2)}
@@ -710,7 +710,7 @@ export default function Orders() {
                   justifyContent="space-between"
                   sx={{ mt: 0.5 }}
                 >
-                  <Typography variant="subtitle2">Total</Typography>
+                  <Typography variant="subtitle2">{t("total")}</Typography>
                   <Typography variant="subtitle2" color="primary">
                     $
                     {Math.max(
