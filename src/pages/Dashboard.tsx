@@ -13,13 +13,13 @@ import {
   Stack,
 } from "@mui/material";
 import {
-  TrendingUp,
-  Assignment,
-  Warning,
-  Receipt,
-  CalendarMonth,
-  LocalShipping,
-} from "@mui/icons-material";
+  IconTrendingUp as TrendingUp,
+  IconClipboardList as Assignment,
+  IconAlertTriangle as Warning,
+  IconReceipt as Receipt,
+  IconCalendar as CalendarMonth,
+  IconTruck as LocalShipping,
+} from "@tabler/icons-react";
 import {
   BarChart,
   Bar,
@@ -65,37 +65,37 @@ export default function Dashboard() {
     {
       title: t("totalSales"),
       value: formatCurrency(stats.totalSales || 0),
-      icon: <TrendingUp color="primary" />,
+      icon: <TrendingUp color="#2563EB" />,
       color: "#e3f2fd",
     },
     {
       title: t("currentMonthSales"),
       value: formatCurrency(stats.currentMonthSales || 0),
-      icon: <CalendarMonth color="success" />,
+      icon: <CalendarMonth color="#10B981" />,
       color: "#e8f5e9",
     },
     {
       title: t("activeOrders"),
       value: stats.activeOrders || 0,
-      icon: <Assignment color="secondary" />,
+      icon: <Assignment color="#10B981" />,
       color: "#fff3e0",
     },
     {
       title: t("shippedOrders"),
       value: stats.shippedOrders || 0,
-      icon: <LocalShipping color="success" />,
+      icon: <LocalShipping color="#10B981" />,
       color: "#e8f5e9",
     },
     {
       title: t("lowStockItems"),
       value: (stats.lowStockItems || []).length,
-      icon: <Warning color="error" />,
+      icon: <Warning color="#ef4444" />,
       color: "#ffebee",
     },
     {
       title: t("recentExpenses"),
       value: (stats.recentExpenses || []).length,
-      icon: <Receipt color="info" />,
+      icon: <Receipt color="#9333ea" />,
       color: "#f3e5f5",
     },
   ];

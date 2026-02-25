@@ -25,7 +25,7 @@ import {
   Divider,
   Grid,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
+import { IconSearch as Search } from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
 import {

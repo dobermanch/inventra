@@ -26,14 +26,14 @@ import {
   Divider,
 } from "@mui/material";
 import {
-  Add,
-  Edit,
-  Delete,
-  CloudUpload,
-  Download,
-  Close,
-  Search,
-} from "@mui/icons-material";
+  IconPlus as Add,
+  IconEdit as Edit,
+  IconTrash as Delete,
+  IconCloudUpload as CloudUpload,
+  IconDownload as Download,
+  IconX as Close,
+  IconSearch as Search,
+} from "@tabler/icons-react";
 import {
   IconButton,
   Tooltip,

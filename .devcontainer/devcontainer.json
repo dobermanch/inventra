@@ -1,7 +1,7 @@
 {
-  "name": "Stokly Dev",
+  "name": "Inventra Dev",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "runArgs": ["--name", "Stokly"],
+  "runArgs": ["--name", "Inventra"],
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker": {
       "version": "latest",

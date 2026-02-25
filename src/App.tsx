@@ -19,13 +19,13 @@ import {
 import { version as pkgVersion } from "../package.json";
 const version = import.meta.env.VITE_APP_VERSION || pkgVersion;
 import {
-  Dashboard as DashboardIcon,
-  Inventory as InventoryIcon,
-  ShoppingCart as OrdersIcon,
-  ReceiptLong as ExpensesIcon,
-  TrendingUp as SalesIcon,
-  Settings as SettingsIcon,
-} from "@mui/icons-material";
+  IconLayoutDashboard as DashboardIcon,
+  IconPackage as InventoryIcon,
+  IconShoppingCart as OrdersIcon,
+  IconReceipt2 as ExpensesIcon,
+  IconTrendingUp as SalesIcon,
+  IconSettings as SettingsIcon,
+} from "@tabler/icons-react";
 import {
   BrowserRouter,
   Routes,
@@ -119,7 +119,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               component="div"
               sx={{ fontWeight: 700, color: "primary.main" }}
             >
-              STOKLY <span style={{ color: "#f27d26" }}>OMS</span>
+              INVENTRA <span style={{ color: "#f27d26" }}>OMS</span>
             </Typography>
             <Typography
               variant="body2"
@@ -195,7 +195,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               v{version}
             </Typography>
             <Link
-              href="https://github.com/dobermanch/stokly"
+              href="https://github.com/dobermanch/inventra"
               target="_blank"
               rel="noopener noreferrer"
               variant="caption"
@@ -236,18 +236,18 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <LanguageProvider>
         <CurrencyProvider>
-        <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/expenses" element={<Expenses />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
-          </Layout>
-        </BrowserRouter>
+          <BrowserRouter>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/sales" element={<Sales />} />
+                <Route path="/expenses" element={<Expenses />} />
+                <Route path="/settings" element={<Settings />} />
+              </Routes>
+            </Layout>
+          </BrowserRouter>
         </CurrencyProvider>
       </LanguageProvider>
     </ThemeProvider>

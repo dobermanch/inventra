@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stokly OMS</title>
+    <title>Inventra OMS</title>
     <style>
       #loading-screen {
         position: fixed;
@@ -31,7 +31,7 @@
         height: 160px;
         border-radius: 50%;
         padding: 6px;
-        background: linear-gradient(135deg, #2563EB, #38bdf8, #10B981);
+        background: linear-gradient(135deg, #2563eb, #38bdf8, #10b981);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -46,11 +46,11 @@
         justify-content: center;
       }
       .loading-brand {
-        font-family: 'Inter', Arial, sans-serif;
+        font-family: "Inter", Arial, sans-serif;
         font-size: 22px;
         font-weight: 800;
         letter-spacing: 4px;
-        background: linear-gradient(135deg, #1e3a8a, #2563EB);
+        background: linear-gradient(135deg, #1e3a8a, #2563eb);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -63,18 +63,35 @@
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #2563EB, #10B981);
+        background: linear-gradient(135deg, #2563eb, #10b981);
         animation: loading-bounce 1.2s ease-in-out infinite;
       }
-      .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-      .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+      .loading-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .loading-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
       @keyframes loading-pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(0.97); }
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(0.97);
+        }
       }
       @keyframes loading-bounce {
-        0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-        40% { transform: translateY(-8px); opacity: 1; }
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.4;
+        }
+        40% {
+          transform: translateY(-8px);
+          opacity: 1;
+        }
       }
     </style>
   </head>
@@ -83,12 +100,10 @@
       <div class="loading-logo">
         <div class="loading-circle">
           <div class="loading-circle-inner">
-            <span class="loading-brand">STOKLY</span>
+            <span class="loading-brand">INVENTRA</span>
           </div>
         </div>
-        <div class="loading-dots">
-          <span></span><span></span><span></span>
-        </div>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
       </div>
     </div>
     <div id="root"></div>

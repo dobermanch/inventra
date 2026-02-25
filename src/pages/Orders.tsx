@@ -32,15 +32,15 @@ import {
   InputAdornment,
 } from "@mui/material";
 import {
-  Add,
-  Delete,
-  CheckCircle,
-  LocalShipping,
-  Cancel,
-  Undo,
-  Edit,
-  Search,
-} from "@mui/icons-material";
+  IconPlus as Add,
+  IconTrash as Delete,
+  IconCircleCheck as CheckCircle,
+  IconTruck as LocalShipping,
+  IconCircleX as Cancel,
+  IconArrowBackUp as Undo,
+  IconEdit as Edit,
+  IconSearch as Search,
+} from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
 import {

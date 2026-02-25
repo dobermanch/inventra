@@ -25,14 +25,14 @@ import {
   Divider,
 } from "@mui/material";
 import {
-  Add,
-  MoreVert,
-  LocalShipping,
-  Edit,
-  CloudUpload,
-  Delete,
-  Search,
-} from "@mui/icons-material";
+  IconPlus as Add,
+  IconDotsVertical as MoreVert,
+  IconTruck as LocalShipping,
+  IconEdit as Edit,
+  IconCloudUpload as CloudUpload,
+  IconTrash as Delete,
+  IconSearch as Search,
+} from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
 
