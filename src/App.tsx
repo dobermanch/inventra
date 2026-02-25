@@ -14,7 +14,9 @@ import {
   CssBaseline,
   ThemeProvider,
   createTheme,
+  Link,
 } from "@mui/material";
+import { version } from "../package.json";
 import {
   Dashboard as DashboardIcon,
   Inventory as InventoryIcon,
@@ -131,37 +133,66 @@ function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Toolbar />
-        <Box sx={{ overflow: "auto", mt: 2 }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  onClick={() => navigate(item.path)}
-                  selected={location.pathname === item.path}
-                  sx={{
-                    mx: 1,
-                    borderRadius: 2,
-                    mb: 0.5,
-                    "&.Mui-selected": {
-                      bgcolor: "secondary.main",
-                      color: "white",
-                      "& .MuiListItemIcon-root": { color: "white" },
-                      "&:hover": { bgcolor: "secondary.dark" },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: "0.9rem",
-                      fontWeight: 500,
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            overflow: "auto",
+          }}
+        >
+          <Box sx={{ flexGrow: 1, mt: 2 }}>
+            <List>
+              {menuItems.map((item) => (
+                <ListItem key={item.text} disablePadding>
+                  <ListItemButton
+                    onClick={() => navigate(item.path)}
+                    selected={location.pathname === item.path}
+                    sx={{
+                      mx: 1,
+                      borderRadius: 2,
+                      mb: 0.5,
+                      "&.Mui-selected": {
+                        bgcolor: "secondary.main",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
+                        "&:hover": { bgcolor: "secondary.dark" },
+                      },
                     }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      slotProps={{
+                        primary: { fontSize: "0.9rem", fontWeight: 500 },
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+          <Box sx={{ textAlign: "center", pb: 2, px: 2 }}>
+            <Typography
+              variant="caption"
+              display="block"
+              color="text.secondary"
+            >
+              v{version}
+            </Typography>
+            <Link
+              href="https://github.com/dobermanch/stokly"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="caption"
+              underline="hover"
+              color="text.secondary"
+            >
+              GitHub
+            </Link>
+          </Box>
         </Box>
       </Drawer>
       <Box
