@@ -4,8 +4,93 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stokly OMS</title>
+    <style>
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.4s ease;
+      }
+      #loading-screen.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .loading-logo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        animation: loading-pulse 1.8s ease-in-out infinite;
+      }
+      .loading-circle {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        padding: 6px;
+        background: linear-gradient(135deg, #2563EB, #38bdf8, #10B981);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .loading-circle-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .loading-brand {
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 4px;
+        background: linear-gradient(135deg, #1e3a8a, #2563EB);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .loading-dots {
+        display: flex;
+        gap: 6px;
+      }
+      .loading-dots span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2563EB, #10B981);
+        animation: loading-bounce 1.2s ease-in-out infinite;
+      }
+      .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+      .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes loading-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(0.97); }
+      }
+      @keyframes loading-bounce {
+        0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+        40% { transform: translateY(-8px); opacity: 1; }
+      }
+    </style>
   </head>
   <body>
+    <div id="loading-screen">
+      <div class="loading-logo">
+        <div class="loading-circle">
+          <div class="loading-circle-inner">
+            <span class="loading-brand">STOKLY</span>
+          </div>
+        </div>
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

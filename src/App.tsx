@@ -223,6 +223,14 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  React.useEffect(() => {
+    const el = document.getElementById("loading-screen");
+    if (!el) return;
+    el.classList.add("fade-out");
+    const timer = setTimeout(() => el.remove(), 400);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <LanguageProvider>
