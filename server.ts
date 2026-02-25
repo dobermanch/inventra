@@ -181,6 +181,11 @@ try {
   console.error('Migration error (expense_invoices):', e);
 }
 
+// Migration: Add notes column to orders if it doesn't exist
+try {
+  db.prepare('ALTER TABLE orders ADD COLUMN notes TEXT').run();
+} catch (e) {}
+
 // Migration: Add price column to items if it doesn't exist
 try {
   const tableInfo = db.prepare("PRAGMA table_info(items)").all() as any[];
@@ -436,11 +441,11 @@ async function startServer() {
   });
 
   app.post('/api/orders', (req, res) => {
-    const { status, customer_details, discount, total_amount, items } = req.body;
-    
+    const { status, customer_details, discount, total_amount, items, notes } = req.body;
+
     const transaction = db.transaction(() => {
-      const info = db.prepare('INSERT INTO orders (status, customer_details, discount, total_amount) VALUES (?, ?, ?, ?)')
-        .run(status, JSON.stringify(customer_details), discount, total_amount);
+      const info = db.prepare('INSERT INTO orders (status, customer_details, discount, total_amount, notes) VALUES (?, ?, ?, ?, ?)')
+        .run(status, JSON.stringify(customer_details), discount, total_amount, notes || null);
       
       const orderId = info.lastInsertRowid;
       const insertOrderItem = db.prepare('INSERT INTO order_items (order_id, variant_id, quantity, unit_price) VALUES (?, ?, ?, ?)');
@@ -461,11 +466,11 @@ async function startServer() {
   app.put('/api/orders/:id', (req, res) => {
     try {
       const { id } = req.params;
-      const { status, customer_details, discount, total_amount, items } = req.body;
-      
+      const { status, customer_details, discount, total_amount, items, notes } = req.body;
+
       const transaction = db.transaction(() => {
         // 1. Restore stock for existing items
-        const oldItems = db.prepare('SELECT variant_id, quantity FROM order_items WHERE order_id = ?').all() as any[];
+        const oldItems = db.prepare('SELECT variant_id, quantity FROM order_items WHERE order_id = ?').all(id) as any[];
         const restoreStock = db.prepare('UPDATE item_variants SET stock_count = stock_count + ? WHERE id = ?');
         for (const item of oldItems) {
           restoreStock.run(item.quantity, item.variant_id);
@@ -475,8 +480,8 @@ async function startServer() {
         db.prepare('DELETE FROM order_items WHERE order_id = ?').run(id);
 
         // 3. Update order metadata
-        db.prepare('UPDATE orders SET status = ?, customer_details = ?, discount = ?, total_amount = ? WHERE id = ?')
-          .run(status, JSON.stringify(customer_details), discount, total_amount, id);
+        db.prepare('UPDATE orders SET status = ?, customer_details = ?, discount = ?, total_amount = ?, notes = ? WHERE id = ?')
+          .run(status, JSON.stringify(customer_details), discount, total_amount, notes || null, id);
 
         // 4. Insert new items and deduct stock
         const insertOrderItem = db.prepare('INSERT INTO order_items (order_id, variant_id, quantity, unit_price) VALUES (?, ?, ?, ?)');
@@ -505,7 +510,7 @@ async function startServer() {
       
       // If canceling or returning, restore inventory
       if ((status === 'canceled' || status === 'returned') && (oldOrder.status !== 'canceled' && oldOrder.status !== 'returned')) {
-        const items = db.prepare('SELECT variant_id, quantity FROM order_items WHERE order_id = ?').all() as any[];
+        const items = db.prepare('SELECT variant_id, quantity FROM order_items WHERE order_id = ?').all(id) as any[];
         const updateStock = db.prepare('UPDATE item_variants SET stock_count = stock_count + ? WHERE id = ?');
         for (const item of items) {
           updateStock.run(item.quantity, item.variant_id);

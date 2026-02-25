@@ -15,6 +15,7 @@ import {
   TextField,
   MenuItem,
   IconButton,
+  Tooltip,
   Stack,
   FormControl,
   InputLabel,
@@ -267,19 +268,23 @@ export default function Inventory() {
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", gap: 0.5 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEditClick(item)}
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteItem(item.id)}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
+                    <Tooltip title={t("editItem")}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditClick(item)}
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t("deleteItem")}>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </Box>
 
@@ -289,20 +294,21 @@ export default function Inventory() {
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     {item.variants.map((v: any) => (
-                      <Chip
-                        key={v.id}
-                        label={`${v.size}: ${v.stock_count}`}
-                        size="small"
-                        color={
-                          v.stock_count <= item.low_stock_threshold
-                            ? "error"
-                            : "default"
-                        }
-                        onClick={() => {
-                          setSelectedVariant(v);
-                          setRestockOpen(true);
-                        }}
-                      />
+                      <Tooltip key={v.id} title={t("restockItem")}>
+                        <Chip
+                          label={`${v.size}: ${v.stock_count}`}
+                          size="small"
+                          color={
+                            v.stock_count <= item.low_stock_threshold
+                              ? "error"
+                              : "default"
+                          }
+                          onClick={() => {
+                            setSelectedVariant(v);
+                            setRestockOpen(true);
+                          }}
+                        />
+                      </Tooltip>
                     ))}
                   </Stack>
                 </Box>

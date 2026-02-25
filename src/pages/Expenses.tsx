@@ -343,16 +343,20 @@ export default function Expenses() {
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton size="small" onClick={() => handleEditClick(expense)}>
-              <Edit fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => handleDeleteExpense(expense.id)}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
+            <Tooltip title={t("editExpense")}>
+              <IconButton size="small" onClick={() => handleEditClick(expense)}>
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t("deleteExpense")}>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleDeleteExpense(expense.id)}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </TableCell>
       </TableRow>
@@ -704,22 +708,26 @@ export default function Expenses() {
                           sx={{ mr: 6 }}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton
-                            size="small"
-                            component="a"
-                            href={inv.url}
-                            download
-                            target="_blank"
-                          >
-                            <Download fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteInvoice(inv.id)}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
+                          <Tooltip title={t("downloadInvoice")}>
+                            <IconButton
+                              size="small"
+                              component="a"
+                              href={inv.url}
+                              download
+                              target="_blank"
+                            >
+                              <Download fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={t("delete")}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteInvoice(inv.id)}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </ListItemSecondaryAction>
                       </ListItem>
                     ))}
@@ -762,17 +770,19 @@ export default function Expenses() {
                           sx={{ mr: 4 }}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() =>
-                              setSelectedFiles((prev) =>
-                                prev.filter((_, i) => i !== idx),
-                              )
-                            }
-                          >
-                            <Close fontSize="small" />
-                          </IconButton>
+                          <Tooltip title={t("delete")}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                setSelectedFiles((prev) =>
+                                  prev.filter((_, i) => i !== idx),
+                                )
+                              }
+                            >
+                              <Close fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </ListItemSecondaryAction>
                       </ListItem>
                     ))}
