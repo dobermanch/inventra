@@ -16,7 +16,8 @@ import {
   createTheme,
   Link,
 } from "@mui/material";
-import { version } from "../package.json";
+import { version as pkgVersion } from "../package.json";
+const version = import.meta.env.VITE_APP_VERSION || pkgVersion;
 import {
   Dashboard as DashboardIcon,
   Inventory as InventoryIcon,

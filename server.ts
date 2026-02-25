@@ -8,30 +8,31 @@ import multer from "multer";
 import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database("inventory.db");
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "uploads");
-const expensesUploadsDir = path.join(uploadsDir, "expenses");
-const inventoryUploadsDir = path.join(uploadsDir, "inventory");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+// Ensure data directory exists
+const dataDir = path.join(__dirname, "data");
+const expensesDataDir = path.join(dataDir, "expenses");
+const inventoryDataDir = path.join(dataDir, "inventory");
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir);
 }
-if (!fs.existsSync(expensesUploadsDir)) {
-  fs.mkdirSync(expensesUploadsDir);
+if (!fs.existsSync(expensesDataDir)) {
+  fs.mkdirSync(expensesDataDir);
 }
-if (!fs.existsSync(inventoryUploadsDir)) {
-  fs.mkdirSync(inventoryUploadsDir);
+if (!fs.existsSync(inventoryDataDir)) {
+  fs.mkdirSync(inventoryDataDir);
 }
+
+const db = new Database(path.join(dataDir, "inventory.db"));
 
 // Configure Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Determine destination based on fieldname or route
     if (file.fieldname === "invoice") {
-      cb(null, "uploads/expenses/");
+      cb(null, "data/expenses/");
     } else {
-      cb(null, "uploads/");
+      cb(null, "data/");
     }
   },
   filename: (req, file, cb) => {
@@ -119,6 +120,7 @@ db.exec(`
     customer_details TEXT, -- JSON
     discount REAL DEFAULT 0,
     total_amount REAL NOT NULL,
+    notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     returned_at DATETIME
   );
@@ -156,98 +158,22 @@ db.exec(`
     value TEXT
   );
 
-  -- Seed Categories
-  INSERT OR IGNORE INTO categories (name) VALUES ('Clothes'), ('Shoes'), ('Other');
-  
   -- Seed Default Settings
   INSERT OR IGNORE INTO settings (key, value) VALUES ('language', 'en');
   INSERT OR IGNORE INTO settings (key, value) VALUES ('currency', 'USD');
 `);
 
-// Migration: Add category and subcategory to expenses if they don't exist
-try {
-  db.prepare("ALTER TABLE expenses ADD COLUMN category TEXT").run();
-} catch (e) {}
-try {
-  db.prepare("ALTER TABLE expenses ADD COLUMN subcategory TEXT").run();
-} catch (e) {}
-try {
-  db.prepare("ALTER TABLE expenses ADD COLUMN quantity REAL DEFAULT 1").run();
-} catch (e) {}
-try {
-  db.prepare("ALTER TABLE expenses ADD COLUMN total_amount REAL").run();
-} catch (e) {}
-try {
-  db.prepare("ALTER TABLE expenses ADD COLUMN invoice_name TEXT").run();
-} catch (e) {}
-
-// Migration: Create expense_invoices and move data from expenses
-try {
-  db.prepare(
-    `
-    CREATE TABLE IF NOT EXISTS expense_invoices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      expense_id INTEGER,
-      name TEXT,
-      url TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE
-    )
-  `,
-  ).run();
-
-  const expenseTableInfo = db
-    .prepare("PRAGMA table_info(expenses)")
-    .all() as any[];
-  const hasPictureUrl = expenseTableInfo.some(
-    (col: any) => col.name === "picture_url",
-  );
-  const expensesWithInvoices = hasPictureUrl
-    ? (db
-        .prepare(
-          'SELECT id, picture_url, invoice_name FROM expenses WHERE picture_url IS NOT NULL AND picture_url != ""',
-        )
-        .all() as any[])
-    : [];
-
-  for (const exp of expensesWithInvoices) {
-    db.prepare(
-      "INSERT INTO expense_invoices (expense_id, name, url) VALUES (?, ?, ?)",
-    ).run(
-      exp.id,
-      exp.invoice_name || exp.picture_url.split("/").pop(),
-      exp.picture_url,
-    );
-  }
-
-  // Optionally remove columns from expenses, but SQLite doesn't support DROP COLUMN easily in older versions
-  // We'll just leave them for now to avoid complexity, or use a temp table if needed.
-  // For this environment, leaving them is safer.
-} catch (e) {
-  console.error("Migration error (expense_invoices):", e);
-}
-
-// Migration: Add notes column to orders if it doesn't exist
-try {
-  db.prepare("ALTER TABLE orders ADD COLUMN notes TEXT").run();
-} catch (e) {}
-
-// Migration: Add price column to items if it doesn't exist
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(items)").all() as any[];
-  const hasPrice = tableInfo.some((col) => col.name === "price");
-  if (!hasPrice) {
-    db.exec("ALTER TABLE items ADD COLUMN price REAL DEFAULT 0");
-    console.log("Migration: Added 'price' column to 'items' table.");
-  }
-} catch (err) {
-  console.error("Migration error:", err);
-}
-
 async function startServer() {
   const app = express();
+
+  // Trust reverse-proxy headers (X-Forwarded-For, X-Forwarded-Proto) when
+  // TRUST_PROXY env var is set, e.g. TRUST_PROXY=1 or TRUST_PROXY=loopback.
+  if (process.env.TRUST_PROXY) {
+    app.set("trust proxy", process.env.TRUST_PROXY);
+  }
+
   app.use(express.json());
-  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+  app.use("/data", express.static(path.join(__dirname, "data")));
 
   // API Routes
 
@@ -432,13 +358,13 @@ async function startServer() {
         const itemId = info.lastInsertRowid;
 
         if (req.file) {
-          const itemDir = path.join(inventoryUploadsDir, itemId.toString());
+          const itemDir = path.join(inventoryDataDir, itemId.toString());
           if (!fs.existsSync(itemDir))
             fs.mkdirSync(itemDir, { recursive: true });
           const newPath = path.join(itemDir, req.file.filename);
           fs.renameSync(req.file.path, newPath);
           db.prepare("UPDATE items SET picture_url = ? WHERE id = ?").run(
-            `/uploads/inventory/${itemId}/${req.file.filename}`,
+            `/data/inventory/${itemId}/${req.file.filename}`,
             itemId,
           );
         }
@@ -480,13 +406,13 @@ async function startServer() {
 
       let picture_url = req.body.picture_url || item.picture_url;
       if (req.file) {
-        const itemDir = path.join(inventoryUploadsDir, id.toString());
+        const itemDir = path.join(inventoryDataDir, id.toString());
         if (!fs.existsSync(itemDir)) fs.mkdirSync(itemDir, { recursive: true });
         const newPath = path.join(itemDir, req.file.filename);
         fs.renameSync(req.file.path, newPath);
-        picture_url = `/uploads/inventory/${id}/${req.file.filename}`;
+        picture_url = `/data/inventory/${id}/${req.file.filename}`;
         // Delete old local file
-        if (item.picture_url && item.picture_url.startsWith("/uploads/")) {
+        if (item.picture_url && item.picture_url.startsWith("/data/")) {
           const oldPath = path.join(__dirname, item.picture_url);
           if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
@@ -581,8 +507,8 @@ async function startServer() {
       const item = db
         .prepare("SELECT picture_url FROM items WHERE id = ?")
         .get(id) as any;
-      if (item?.picture_url?.startsWith("/uploads/")) {
-        const itemDir = path.join(inventoryUploadsDir, id.toString());
+      if (item?.picture_url?.startsWith("/data/")) {
+        const itemDir = path.join(inventoryDataDir, id.toString());
         if (fs.existsSync(itemDir))
           fs.rmSync(itemDir, { recursive: true, force: true });
       }
@@ -882,7 +808,7 @@ async function startServer() {
       const files = req.files as Express.Multer.File[];
 
       if (files && files.length > 0) {
-        const expenseDir = path.join(expensesUploadsDir, expenseId.toString());
+        const expenseDir = path.join(expensesDataDir, expenseId.toString());
         if (!fs.existsSync(expenseDir)) {
           fs.mkdirSync(expenseDir, { recursive: true });
         }
@@ -890,7 +816,7 @@ async function startServer() {
         files.forEach((file, index) => {
           const newPath = path.join(expenseDir, file.filename);
           fs.renameSync(file.path, newPath);
-          const url = `/uploads/expenses/${expenseId}/${file.filename}`;
+          const url = `/data/expenses/${expenseId}/${file.filename}`;
           const invName = invoiceNames[index] || file.originalname;
 
           db.prepare(
@@ -948,7 +874,7 @@ async function startServer() {
       // Handle new files
       const files = req.files as Express.Multer.File[];
       if (files && files.length > 0) {
-        const expenseDir = path.join(expensesUploadsDir, id.toString());
+        const expenseDir = path.join(expensesDataDir, id.toString());
         if (!fs.existsSync(expenseDir)) {
           fs.mkdirSync(expenseDir, { recursive: true });
         }
@@ -956,7 +882,7 @@ async function startServer() {
         files.forEach((file, index) => {
           const newPath = path.join(expenseDir, file.filename);
           fs.renameSync(file.path, newPath);
-          const url = `/uploads/expenses/${id}/${file.filename}`;
+          const url = `/data/expenses/${id}/${file.filename}`;
           const invName = invoiceNames[index] || file.originalname;
 
           db.prepare(
@@ -980,8 +906,8 @@ async function startServer() {
         .get(id) as any;
 
       if (invoice) {
-        const relativePath = invoice.url.replace("/uploads/", "");
-        const fullPath = path.join(uploadsDir, relativePath);
+        const relativePath = invoice.url.replace("/data/", "");
+        const fullPath = path.join(dataDir, relativePath);
         if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
 
         db.prepare("DELETE FROM expense_invoices WHERE id = ?").run(id);
@@ -1002,12 +928,12 @@ async function startServer() {
         .all(id) as any[];
 
       invoices.forEach((inv) => {
-        const relativePath = inv.url.replace("/uploads/", "");
-        const fullPath = path.join(uploadsDir, relativePath);
+        const relativePath = inv.url.replace("/data/", "");
+        const fullPath = path.join(dataDir, relativePath);
         if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
       });
 
-      const expenseDir = path.join(expensesUploadsDir, id.toString());
+      const expenseDir = path.join(expensesDataDir, id.toString());
       if (fs.existsSync(expenseDir))
         fs.rmSync(expenseDir, { recursive: true, force: true });
 
@@ -1020,7 +946,7 @@ async function startServer() {
     }
   });
 
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || "3000", 10);
   const httpServer = http.createServer(app);
 
   // Vite middleware for development
