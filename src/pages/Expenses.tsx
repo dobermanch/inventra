@@ -43,10 +43,12 @@ import {
   InputAdornment,
 } from "@mui/material";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { useDropzone } from "react-dropzone";
 
 export default function Expenses() {
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<
@@ -336,7 +338,7 @@ export default function Expenses() {
         </TableCell>
         <TableCell>{expense.details}</TableCell>
         <TableCell align="right" sx={{ fontWeight: 600, color: "error.main" }}>
-          ${(expense.total_amount || expense.amount).toLocaleString()}
+          {formatCurrency(expense.total_amount || expense.amount)}
         </TableCell>
         <TableCell align="right">
           <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -479,7 +481,7 @@ export default function Expenses() {
                             variant="subtitle2"
                             sx={{ fontWeight: 700, color: "error.main" }}
                           >
-                            -${groupTotal.toLocaleString()}
+                            -{formatCurrency(groupTotal)}
                           </Typography>
                         </TableCell>
                         <TableCell />
@@ -634,10 +636,7 @@ export default function Expenses() {
               <TextField
                 label={t("totalPrice")}
                 fullWidth
-                value={
-                  "$" +
-                  (newExpense.amount * newExpense.quantity).toLocaleString()
-                }
+                value={formatCurrency(newExpense.amount * newExpense.quantity)}
                 disabled
               />
             </Stack>

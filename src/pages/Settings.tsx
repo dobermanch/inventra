@@ -12,9 +12,11 @@ import {
 } from "@mui/material";
 import { useLanguage } from "../context/LanguageContext";
 import { Language } from "../translations";
+import { useCurrency, Currency } from "../context/CurrencyContext";
 
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
+  const { currency, setCurrency } = useCurrency();
 
   return (
     <Box>
@@ -55,7 +57,11 @@ export default function Settings() {
             </Typography>
             <FormControl fullWidth>
               <InputLabel>{t("currency")}</InputLabel>
-              <Select value="USD" label={t("currency")}>
+              <Select
+                value={currency}
+                label={t("currency")}
+                onChange={(e) => setCurrency(e.target.value as Currency)}
+              >
                 <MenuItem value="USD">USD ($)</MenuItem>
                 <MenuItem value="UAH">UAH (₴)</MenuItem>
               </Select>

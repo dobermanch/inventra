@@ -30,6 +30,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrency } from "../context/CurrencyContext";
 import {
   OrderStatus,
   STATUS_TRANSLATION_KEY,
@@ -39,6 +40,7 @@ import {
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const { t, language } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const locale = language === "ua" ? "uk-UA" : "en-US";
   const formatMonth = (raw: string) => {
     const [year, month] = raw.split("-");
@@ -62,13 +64,13 @@ export default function Dashboard() {
   const summaryCards = [
     {
       title: t("totalSales"),
-      value: `$${(stats.totalSales || 0).toLocaleString()}`,
+      value: formatCurrency(stats.totalSales || 0),
       icon: <TrendingUp color="primary" />,
       color: "#e3f2fd",
     },
     {
       title: t("currentMonthSales"),
-      value: `$${(stats.currentMonthSales || 0).toLocaleString()}`,
+      value: formatCurrency(stats.currentMonthSales || 0),
       icon: <CalendarMonth color="success" />,
       color: "#e8f5e9",
     },
@@ -159,7 +161,7 @@ export default function Dashboard() {
                   <Tooltip
                     cursor={{ fill: "#f5f5f5" }}
                     formatter={(value: any) => [
-                      `$${Number(value).toLocaleString()}`,
+                      formatCurrency(Number(value)),
                       t("salesChartLabel"),
                     ]}
                   />
@@ -254,7 +256,7 @@ export default function Dashboard() {
                             sx={{ minWidth: 80, justifyContent: "center" }}
                           />
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            ${order.total_amount.toLocaleString()}
+                            {formatCurrency(order.total_amount)}
                           </Typography>
                         </Stack>
                       </ListItem>
@@ -268,7 +270,7 @@ export default function Dashboard() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, height: 430, overflow: "auto" }}>
+          <Paper sx={{ p: 3, height: 440, overflow: "auto" }}>
             <Typography variant="h6" gutterBottom>
               {t("recentExpenses")}
             </Typography>
@@ -316,10 +318,7 @@ export default function Dashboard() {
                           variant="body2"
                           sx={{ fontWeight: 600, color: "error.main" }}
                         >
-                          -$
-                          {(
-                            expense.total_amount || expense.amount
-                          ).toLocaleString()}
+                          -{formatCurrency(expense.total_amount || expense.amount)}
                         </Typography>
                       </Stack>
                     </ListItem>
@@ -332,7 +331,7 @@ export default function Dashboard() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, height: 430, overflow: "auto" }}>
+          <Paper sx={{ p: 3, height: 440, overflow: "auto" }}>
             <Typography variant="h6" gutterBottom>
               {t("lowStockAlerts")}
             </Typography>

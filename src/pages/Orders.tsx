@@ -42,6 +42,7 @@ import {
   Search,
 } from "@mui/icons-material";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrency } from "../context/CurrencyContext";
 import {
   OrderStatus,
   ORDER_STATUSES,
@@ -51,6 +52,7 @@ import {
 
 export default function Orders() {
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [orders, setOrders] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -282,7 +284,7 @@ export default function Orders() {
             </Typography>
           )}
         </TableCell>
-        <TableCell>${order.total_amount.toLocaleString()}</TableCell>
+        <TableCell>{formatCurrency(order.total_amount)}</TableCell>
         <TableCell>
           <Chip
             label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
@@ -455,7 +457,7 @@ export default function Orders() {
                             variant="subtitle2"
                             sx={{ fontWeight: 700, color: "primary.main" }}
                           >
-                            ${groupTotal.toLocaleString()}
+                            {formatCurrency(groupTotal)}
                           </Typography>
                         </TableCell>
                         <TableCell colSpan={2} />
@@ -686,13 +688,10 @@ export default function Orders() {
                     {t("subtotal")}
                   </Typography>
                   <Typography variant="body2">
-                    $
-                    {newOrder.items
-                      .reduce(
-                        (sum, item) => sum + item.unit_price * item.quantity,
-                        0,
-                      )
-                      .toFixed(2)}
+                    {formatCurrency(newOrder.items.reduce(
+                      (sum, item) => sum + item.unit_price * item.quantity,
+                      0,
+                    ))}
                   </Typography>
                 </Stack>
                 {newOrder.discount > 0 && (
@@ -701,7 +700,7 @@ export default function Orders() {
                       {t("discount")}
                     </Typography>
                     <Typography variant="body2" color="error">
-                      -${newOrder.discount.toFixed(2)}
+                      -{formatCurrency(newOrder.discount)}
                     </Typography>
                   </Stack>
                 )}
@@ -712,14 +711,13 @@ export default function Orders() {
                 >
                   <Typography variant="subtitle2">{t("total")}</Typography>
                   <Typography variant="subtitle2" color="primary">
-                    $
-                    {Math.max(
+                    {formatCurrency(Math.max(
                       0,
                       newOrder.items.reduce(
                         (sum, item) => sum + item.unit_price * item.quantity,
                         0,
                       ) - newOrder.discount,
-                    ).toFixed(2)}
+                    ))}
                   </Typography>
                 </Stack>
               </Box>

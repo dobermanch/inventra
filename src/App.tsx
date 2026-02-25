@@ -41,6 +41,7 @@ import Expenses from "./pages/Expenses";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 
 const drawerWidth = 240;
 
@@ -225,6 +226,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <LanguageProvider>
+        <CurrencyProvider>
         <BrowserRouter>
           <Layout>
             <Routes>
@@ -237,6 +239,7 @@ export default function App() {
             </Routes>
           </Layout>
         </BrowserRouter>
+        </CurrencyProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

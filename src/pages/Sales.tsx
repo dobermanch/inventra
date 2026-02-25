@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrency } from "../context/CurrencyContext";
 import {
   OrderStatus,
   ORDER_STATUSES,
@@ -36,6 +37,7 @@ import {
 
 export default function Sales() {
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [orders, setOrders] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchText, setSearchText] = useState("");
@@ -169,7 +171,7 @@ export default function Sales() {
             />
           </TableCell>
           <TableCell align="right" sx={{ fontWeight: 600 }}>
-            ${order.total_amount.toLocaleString()}
+            {formatCurrency(order.total_amount)}
           </TableCell>
         </TableRow>
       );
@@ -238,7 +240,7 @@ export default function Sales() {
           <Paper sx={{ px: 2, py: 1, bgcolor: "primary.main", color: "white" }}>
             <Typography variant="caption">{t("totalRevenue")}</Typography>
             <Typography variant="h6">
-              ${totalRevenue.toLocaleString()}
+              {formatCurrency(totalRevenue)}
             </Typography>
           </Paper>
         </Stack>
@@ -292,7 +294,7 @@ export default function Sales() {
                             variant="subtitle2"
                             sx={{ fontWeight: 700, color: "primary.main" }}
                           >
-                            ${groupTotal.toLocaleString()}
+                            {formatCurrency(groupTotal)}
                           </Typography>
                         </TableCell>
                       </TableRow>
@@ -394,7 +396,7 @@ export default function Sales() {
                       {item.name} ({item.size}) x{item.quantity}
                     </Typography>
                     <Typography variant="body2">
-                      ${(item.unit_price * item.quantity).toLocaleString()}
+                      {formatCurrency(item.unit_price * item.quantity)}
                     </Typography>
                   </Stack>
                 ))}
@@ -408,14 +410,11 @@ export default function Sales() {
                         {t("subtotal")}
                       </Typography>
                       <Typography variant="body2">
-                        $
-                        {viewOrder.items
-                          .reduce(
-                            (sum: number, item: any) =>
-                              sum + item.unit_price * item.quantity,
-                            0,
-                          )
-                          .toLocaleString()}
+                        {formatCurrency(viewOrder.items.reduce(
+                          (sum: number, item: any) =>
+                            sum + item.unit_price * item.quantity,
+                          0,
+                        ))}
                       </Typography>
                     </Stack>
                     <Stack direction="row" justifyContent="space-between">
@@ -423,7 +422,7 @@ export default function Sales() {
                         {t("discount")}
                       </Typography>
                       <Typography variant="body2" color="error">
-                        -${viewOrder.discount.toLocaleString()}
+                        -{formatCurrency(viewOrder.discount)}
                       </Typography>
                     </Stack>
                   </>
@@ -432,7 +431,7 @@ export default function Sales() {
                 <Stack direction="row" justifyContent="space-between">
                   <Typography variant="subtitle2">{t("total")}</Typography>
                   <Typography variant="subtitle2" color="primary">
-                    ${viewOrder.total_amount.toLocaleString()}
+                    {formatCurrency(viewOrder.total_amount)}
                   </Typography>
                 </Stack>
               </Stack>

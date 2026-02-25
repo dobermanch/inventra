@@ -34,9 +34,11 @@ import {
   Search,
 } from "@mui/icons-material";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrency } from "../context/CurrencyContext";
 
 export default function Inventory() {
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [items, setItems] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
@@ -304,7 +306,7 @@ export default function Inventory() {
                         {item.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {item.category_name} • ${item.price?.toLocaleString()}
+                        {item.category_name} • {formatCurrency(item.price || 0)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 0.5 }}>
