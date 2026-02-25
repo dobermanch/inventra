@@ -1,0 +1,46 @@
+{
+  "name": "Stokly Dev",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "runArgs": ["--name", "Stokly"],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker": {
+      "version": "latest",
+      "moby": false
+    }
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "App (Express + Vite)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "npm install",
+  "remoteEnv": {
+    "APP_URL": "${localEnv:APP_URL}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "alexcvzz.vscode-sqlite",
+        "dsznajder.es7-react-js-snippets",
+        "christian-kohler.path-intellisense",
+        "formulahendry.auto-rename-tag",
+        "ms-vscode.vscode-json"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "tailwindCSS.experimental.classRegex": [
+          ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+          ["tw`([^`]*)`"]
+        ]
+      }
+    }
+  }
+}
