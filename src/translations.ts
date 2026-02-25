@@ -8,6 +8,7 @@ export const translations = {
     settings: "Settings",
     totalSales: "Total Sales",
     activeOrders: "Active Orders",
+    shippedOrders: "Shipped Orders",
     lowStockItems: "Low Stock Items",
     recentExpenses: "Recent Expenses",
     dashboardOverview: "Dashboard Overview",
@@ -105,6 +106,10 @@ export const translations = {
     statusDelivered: "Delivered",
     statusCanceled: "Canceled",
     statusReturned: "Returned",
+    currentMonthSales: "This Month Sales",
+    recentActiveOrders: "Recent Active Orders",
+    noActiveOrders: "No active or shipped orders",
+    noRecentExpenses: "No recent expenses",
   },
   ua: {
     dashboard: "Панель приладів",
@@ -115,6 +120,7 @@ export const translations = {
     settings: "Налаштування",
     totalSales: "Загальні продажі",
     activeOrders: "Активні замовлення",
+    shippedOrders: "Відправлені замовлення",
     lowStockItems: "Товари з низьким запасом",
     recentExpenses: "Останні витрати",
     dashboardOverview: "Огляд панелі приладів",
@@ -212,6 +218,10 @@ export const translations = {
     statusDelivered: "Доставлено",
     statusCanceled: "Скасовано",
     statusReturned: "Повернуто",
+    currentMonthSales: "Продажі цього місяця",
+    recentActiveOrders: "Останні активні замовлення",
+    noActiveOrders: "Немає активних або відвантажених замовлень",
+    noRecentExpenses: "Немає останніх витрат",
   },
 };
 
