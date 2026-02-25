@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  Paper, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
+import React, { useEffect, useState } from "react";
+import {
+  Typography,
+  Box,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
   TableRow,
   Dialog,
   DialogTitle,
@@ -21,40 +21,55 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormControlLabel,
-  Switch,
-  Chip
-} from '@mui/material';
-import { Add, Edit, Delete, CloudUpload, Download, FilterList, GroupWork, Close } from '@mui/icons-material';
-import { IconButton, Tooltip, List, ListItem, ListItemSecondaryAction } from '@mui/material';
-import { useLanguage } from '../context/LanguageContext';
-import { useDropzone } from 'react-dropzone';
+  Chip,
+} from "@mui/material";
+import {
+  Add,
+  Edit,
+  Delete,
+  CloudUpload,
+  Download,
+  Close,
+} from "@mui/icons-material";
+import {
+  IconButton,
+  Tooltip,
+  List,
+  ListItem,
+  ListItemSecondaryAction,
+} from "@mui/material";
+import { useLanguage } from "../context/LanguageContext";
+import { useDropzone } from "react-dropzone";
 
 export default function Expenses() {
   const { t } = useLanguage();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<{ file: File, name: string }[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<
+    { file: File; name: string }[]
+  >([]);
   const [existingInvoices, setExistingInvoices] = useState<any[]>([]);
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [isGrouped, setIsGrouped] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [groupBy, setGroupBy] = useState<
+    "none" | "year" | "monthYear" | "subcategory" | "category"
+  >("none");
 
   const [newExpense, setNewExpense] = useState({
     id: null as number | null,
-    name: '',
-    details: '',
-    category: '',
-    subcategory: '',
+    name: "",
+    details: "",
+    category: "",
+    subcategory: "",
     amount: 0,
     quantity: 1,
     total_amount: 0,
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split("T")[0],
   });
 
   const fetchExpenses = () => {
-    fetch('/api/expenses')
-      .then(res => res.json())
-      .then(data => setExpenses(data));
+    fetch("/api/expenses")
+      .then((res) => res.json())
+      .then((data) => setExpenses(data));
   };
 
   useEffect(() => {
@@ -63,32 +78,40 @@ export default function Expenses() {
 
   const handleSaveExpense = async () => {
     const formData = new FormData();
-    formData.append('name', newExpense.name);
-    formData.append('details', newExpense.details);
-    formData.append('category', newExpense.category);
-    formData.append('subcategory', newExpense.subcategory);
-    formData.append('amount', newExpense.amount.toString());
-    formData.append('quantity', newExpense.quantity.toString());
-    formData.append('total_amount', (newExpense.amount * newExpense.quantity).toString());
-    formData.append('date', newExpense.date);
-    
-    // Add new files
-    selectedFiles.forEach(sf => {
-      formData.append('invoices', sf.file);
-    });
-    formData.append('invoiceNames', JSON.stringify(selectedFiles.map(sf => sf.name)));
-    
-    // Add existing invoices (for name updates)
-    formData.append('existingInvoices', JSON.stringify(existingInvoices));
+    formData.append("name", newExpense.name);
+    formData.append("details", newExpense.details);
+    formData.append("category", newExpense.category);
+    formData.append("subcategory", newExpense.subcategory);
+    formData.append("amount", newExpense.amount.toString());
+    formData.append("quantity", newExpense.quantity.toString());
+    formData.append(
+      "total_amount",
+      (newExpense.amount * newExpense.quantity).toString(),
+    );
+    formData.append("date", newExpense.date);
 
-    const url = newExpense.id ? `/api/expenses/${newExpense.id}` : '/api/expenses';
-    const method = newExpense.id ? 'PUT' : 'POST';
+    // Add new files
+    selectedFiles.forEach((sf) => {
+      formData.append("invoices", sf.file);
+    });
+    formData.append(
+      "invoiceNames",
+      JSON.stringify(selectedFiles.map((sf) => sf.name)),
+    );
+
+    // Add existing invoices (for name updates)
+    formData.append("existingInvoices", JSON.stringify(existingInvoices));
+
+    const url = newExpense.id
+      ? `/api/expenses/${newExpense.id}`
+      : "/api/expenses";
+    const method = newExpense.id ? "PUT" : "POST";
 
     await fetch(url, {
       method,
-      body: formData
+      body: formData,
     });
-    
+
     setOpen(false);
     resetForm();
     fetchExpenses();
@@ -97,14 +120,14 @@ export default function Expenses() {
   const resetForm = () => {
     setNewExpense({
       id: null,
-      name: '',
-      details: '',
-      category: '',
-      subcategory: '',
+      name: "",
+      details: "",
+      category: "",
+      subcategory: "",
       amount: 0,
       quantity: 1,
       total_amount: 0,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split("T")[0],
     });
     setSelectedFiles([]);
     setExistingInvoices([]);
@@ -115,80 +138,137 @@ export default function Expenses() {
       id: expense.id,
       name: expense.name,
       details: expense.details,
-      category: expense.category || '',
-      subcategory: expense.subcategory || '',
+      category: expense.category || "",
+      subcategory: expense.subcategory || "",
       amount: expense.amount,
       quantity: expense.quantity || 1,
       total_amount: expense.total_amount || expense.amount,
-      date: expense.date
+      date: expense.date,
     });
     setExistingInvoices(expense.invoices || []);
     setOpen(true);
   };
 
   const handleDeleteExpense = async (id: number) => {
-    if (window.confirm(t('areYouSureDelete'))) {
-      await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+    if (window.confirm(t("areYouSureDelete"))) {
+      await fetch(`/api/expenses/${id}`, { method: "DELETE" });
       fetchExpenses();
     }
   };
 
-  const uniqueCategories = Array.from(new Set(expenses.map(e => e.category).filter(Boolean)));
-  const uniqueSubcategories = Array.from(new Set(expenses.map(e => e.subcategory).filter(Boolean)));
+  const uniqueCategories = Array.from(
+    new Set(expenses.map((e) => e.category).filter(Boolean)),
+  );
+  const uniqueSubcategories = Array.from(
+    new Set(expenses.map((e) => e.subcategory).filter(Boolean)),
+  );
 
-  const filteredExpenses = expenses.filter(e => filterCategory === 'all' || e.category === filterCategory);
+  const filteredExpenses = expenses.filter(
+    (e) => filterCategory === "all" || e.category === filterCategory,
+  );
 
-  const groupedExpenses = isGrouped 
-    ? filteredExpenses.reduce((acc, curr) => {
-        const cat = curr.category || 'Uncategorized';
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(curr);
-        return acc;
-      }, {} as Record<string, any[]>)
-    : null;
+  const getGroupKey = (expense: any): string => {
+    const date = new Date(expense.date);
+    switch (groupBy) {
+      case "year":
+        return date.getFullYear().toString();
+      case "monthYear":
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      case "subcategory":
+        return expense.subcategory || "Uncategorized";
+      case "category":
+        return expense.category || "Uncategorized";
+      default:
+        return "";
+    }
+  };
+
+  const formatGroupLabel = (key: string): string => {
+    if (groupBy === "monthYear") {
+      const [year, month] = key.split("-");
+      return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(
+        undefined,
+        { month: "long", year: "numeric" },
+      );
+    }
+    return key;
+  };
+
+  const groupedExpenses =
+    groupBy !== "none"
+      ? filteredExpenses.reduce(
+          (acc, curr) => {
+            const key = getGroupKey(curr);
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(curr);
+            return acc;
+          },
+          {} as Record<string, any[]>,
+        )
+      : null;
+
+  const sortedGroupKeys = groupedExpenses
+    ? Object.keys(groupedExpenses).sort((a, b) =>
+        groupBy === "year" || groupBy === "monthYear"
+          ? b.localeCompare(a)
+          : a.localeCompare(b),
+      )
+    : [];
 
   const handleDeleteInvoice = async (invoiceId: number) => {
-    if (window.confirm(t('areYouSureDelete'))) {
-      await fetch(`/api/expenses/invoices/${invoiceId}`, { method: 'DELETE' });
-      setExistingInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
+    if (window.confirm(t("areYouSureDelete"))) {
+      await fetch(`/api/expenses/invoices/${invoiceId}`, { method: "DELETE" });
+      setExistingInvoices((prev) => prev.filter((inv) => inv.id !== invoiceId));
       fetchExpenses();
     }
   };
 
   const onDrop = (acceptedFiles: File[]) => {
-    const newFiles = acceptedFiles.map(file => ({
+    const newFiles = acceptedFiles.map((file) => ({
       file,
-      name: file.name
+      name: file.name,
     }));
-    setSelectedFiles(prev => [...prev, ...newFiles]);
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  const renderTableBody = (items: any[]) => (
+  const renderTableBody = (items: any[]) =>
     items.map((expense) => (
       <TableRow key={expense.id}>
         <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
         <TableCell>
           <Typography variant="body1">{expense.name}</Typography>
           <Stack direction="row" spacing={0.5}>
-            {expense.category && <Chip label={expense.category} size="small" variant="outlined" />}
-            {expense.subcategory && <Chip label={expense.subcategory} size="small" variant="outlined" color="primary" />}
+            {expense.category && (
+              <Chip label={expense.category} size="small" variant="outlined" />
+            )}
+            {expense.subcategory && (
+              <Chip
+                label={expense.subcategory}
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+            )}
           </Stack>
         </TableCell>
         <TableCell>{expense.details}</TableCell>
-        <TableCell align="right" sx={{ fontWeight: 600, color: 'error.main' }}>
-          -${(expense.total_amount || expense.amount).toLocaleString()}
+        <TableCell align="right" sx={{ fontWeight: 600, color: "error.main" }}>
+          ${(expense.total_amount || expense.amount).toLocaleString()}
         </TableCell>
         <TableCell align="right">
           <Stack direction="row" spacing={1} justifyContent="flex-end">
             {(expense.invoices || []).map((inv: any) => (
-              <Tooltip key={inv.id} title={`${t('downloadInvoice')}: ${inv.name}`}>
-                <IconButton 
-                  size="small" 
-                  component="a" 
-                  href={inv.url} 
-                  download 
+              <Tooltip
+                key={inv.id}
+                title={`${t("downloadInvoice")}: ${inv.name}`}
+              >
+                <IconButton
+                  size="small"
+                  component="a"
+                  href={inv.url}
+                  download
                   target="_blank"
                 >
                   <Download fontSize="small" />
@@ -198,39 +278,65 @@ export default function Expenses() {
             <IconButton size="small" onClick={() => handleEditClick(expense)}>
               <Edit fontSize="small" />
             </IconButton>
-            <IconButton size="small" color="error" onClick={() => handleDeleteExpense(expense.id)}>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDeleteExpense(expense.id)}
+            >
               <Delete fontSize="small" />
             </IconButton>
           </Stack>
         </TableCell>
       </TableRow>
-    ))
-  );
+    ));
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, alignItems: 'center' }}>
-        <Typography variant="h5">{t('expenses')}</Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          mb: 4,
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h5">{t("expenses")}</Typography>
         <Stack direction="row" spacing={2}>
           <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>{t('filterByCategory')}</InputLabel>
+            <InputLabel>{t("filterByCategory")}</InputLabel>
             <Select
               value={filterCategory}
-              label={t('filterByCategory')}
+              label={t("filterByCategory")}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
-              <MenuItem value="all">{t('allCategories')}</MenuItem>
-              {uniqueCategories.map(cat => (
-                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+              <MenuItem value="all">{t("allCategories")}</MenuItem>
+              {uniqueCategories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
-          <FormControlLabel
-            control={<Switch checked={isGrouped} onChange={(e) => setIsGrouped(e.target.checked)} />}
-            label={t('groupByCategory')}
-          />
-          <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
-            {t('addExpense')}
+          <FormControl size="small" sx={{ minWidth: 170 }}>
+            <InputLabel>{t("groupBy")}</InputLabel>
+            <Select
+              value={groupBy}
+              label={t("groupBy")}
+              onChange={(e) => setGroupBy(e.target.value as typeof groupBy)}
+            >
+              <MenuItem value="none">{t("noGrouping")}</MenuItem>
+              <MenuItem value="year">{t("byYear")}</MenuItem>
+              <MenuItem value="monthYear">{t("byMonthYear")}</MenuItem>
+              <MenuItem value="subcategory">{t("bySubcategory")}</MenuItem>
+              <MenuItem value="category">{t("byCategory")}</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => setOpen(true)}
+          >
+            {t("addExpense")}
           </Button>
         </Stack>
       </Box>
@@ -239,116 +345,214 @@ export default function Expenses() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t('date')}</TableCell>
-              <TableCell>{t('expenseName')}</TableCell>
-              <TableCell>{t('details')}</TableCell>
-              <TableCell align="right">{t('amount')}</TableCell>
-              <TableCell align="right">{t('actions')}</TableCell>
+              <TableCell>{t("date")}</TableCell>
+              <TableCell>{t("expenseName")}</TableCell>
+              <TableCell>{t("details")}</TableCell>
+              <TableCell align="right">{t("amount")}</TableCell>
+              <TableCell align="right">{t("actions")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {isGrouped && groupedExpenses ? (
-              Object.entries(groupedExpenses).map(([category, items]) => (
-                <React.Fragment key={category}>
-                  <TableRow sx={{ bgcolor: 'action.hover' }}>
-                    <TableCell colSpan={5}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        {category} ({(items as any[]).length})
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                  {renderTableBody(items as any[])}
-                </React.Fragment>
-              ))
-            ) : (
-              renderTableBody(filteredExpenses)
-            )}
+            {groupedExpenses
+              ? sortedGroupKeys.map((key) => {
+                  const items = groupedExpenses[key] as any[];
+                  const groupTotal = items.reduce(
+                    (sum, e) => sum + (e.total_amount || e.amount),
+                    0,
+                  );
+                  return (
+                    <React.Fragment key={key}>
+                      <TableRow sx={{ bgcolor: "action.hover" }}>
+                        <TableCell colSpan={3}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 700 }}
+                          >
+                            {formatGroupLabel(key)}
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ ml: 1 }}
+                            >
+                              ({items.length})
+                            </Typography>
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 700, color: "error.main" }}
+                          >
+                            -${groupTotal.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell />
+                      </TableRow>
+                      {renderTableBody(items)}
+                    </React.Fragment>
+                  );
+                })
+              : renderTableBody(filteredExpenses)}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={open} onClose={() => { setOpen(false); resetForm(); }} fullWidth maxWidth="xs">
-        <DialogTitle>{newExpense.id ? t('edit') : t('addExpense')}</DialogTitle>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          resetForm();
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>{newExpense.id ? t("edit") : t("addExpense")}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label={t('expenseName')} fullWidth value={newExpense.name} onChange={e => setNewExpense({...newExpense, name: e.target.value})} />
-            
+            <TextField
+              label={t("expenseName")}
+              fullWidth
+              value={newExpense.name}
+              onChange={(e) =>
+                setNewExpense({ ...newExpense, name: e.target.value })
+              }
+            />
+
             <Autocomplete
               freeSolo
               options={uniqueCategories}
               value={newExpense.category}
-              onChange={(_, newValue) => setNewExpense({...newExpense, category: newValue || ''})}
-              onInputChange={(_, newInputValue) => setNewExpense({...newExpense, category: newInputValue})}
-              renderInput={(params) => <TextField {...params} label={t('category')} />}
+              onChange={(_, newValue) =>
+                setNewExpense({ ...newExpense, category: newValue || "" })
+              }
+              onInputChange={(_, newInputValue) =>
+                setNewExpense({ ...newExpense, category: newInputValue })
+              }
+              renderInput={(params) => (
+                <TextField {...params} label={t("category")} />
+              )}
             />
 
             <Autocomplete
               freeSolo
               options={uniqueSubcategories}
               value={newExpense.subcategory}
-              onChange={(_, newValue) => setNewExpense({...newExpense, subcategory: newValue || ''})}
-              onInputChange={(_, newInputValue) => setNewExpense({...newExpense, subcategory: newInputValue})}
-              renderInput={(params) => <TextField {...params} label={t('subcategory')} />}
+              onChange={(_, newValue) =>
+                setNewExpense({ ...newExpense, subcategory: newValue || "" })
+              }
+              onInputChange={(_, newInputValue) =>
+                setNewExpense({ ...newExpense, subcategory: newInputValue })
+              }
+              renderInput={(params) => (
+                <TextField {...params} label={t("subcategory")} />
+              )}
             />
 
             <Stack direction="row" spacing={2}>
-              <TextField 
-                label={t('amount')} 
-                type="number" 
-                fullWidth 
-                value={newExpense.amount} 
-                onChange={e => setNewExpense({...newExpense, amount: parseFloat(e.target.value) || 0})} 
+              <TextField
+                label={t("amount")}
+                type="number"
+                fullWidth
+                value={newExpense.amount}
+                onChange={(e) =>
+                  setNewExpense({
+                    ...newExpense,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
               />
-              <TextField 
-                label={t('quantity')} 
-                type="number" 
-                fullWidth 
-                value={newExpense.quantity} 
-                onChange={e => setNewExpense({...newExpense, quantity: parseFloat(e.target.value) || 1})} 
+              <TextField
+                label={t("quantity")}
+                type="number"
+                fullWidth
+                value={newExpense.quantity}
+                onChange={(e) =>
+                  setNewExpense({
+                    ...newExpense,
+                    quantity: parseFloat(e.target.value) || 1,
+                  })
+                }
                 inputProps={{ step: "0.01" }}
               />
             </Stack>
 
-            <TextField 
-              label={t('totalPrice')} 
-              fullWidth 
-              value={(newExpense.amount * newExpense.quantity).toLocaleString()} 
-              disabled 
+            <TextField
+              label={t("totalPrice")}
+              fullWidth
+              value={(newExpense.amount * newExpense.quantity).toLocaleString()}
+              disabled
             />
 
-            <TextField label={t('details')} fullWidth multiline rows={2} value={newExpense.details} onChange={e => setNewExpense({...newExpense, details: e.target.value})} />
-            <TextField label={t('date')} type="date" fullWidth value={newExpense.date} onChange={e => setNewExpense({...newExpense, date: e.target.value})} InputLabelProps={{ shrink: true }} />
-            
+            <TextField
+              label={t("details")}
+              fullWidth
+              multiline
+              rows={2}
+              value={newExpense.details}
+              onChange={(e) =>
+                setNewExpense({ ...newExpense, details: e.target.value })
+              }
+            />
+            <TextField
+              label={t("date")}
+              type="date"
+              fullWidth
+              value={newExpense.date}
+              onChange={(e) =>
+                setNewExpense({ ...newExpense, date: e.target.value })
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+
             <Box>
-              <Typography variant="subtitle2" gutterBottom>{t('uploadedInvoices')}</Typography>
+              <Typography variant="subtitle2" gutterBottom>
+                {t("uploadedInvoices")}
+              </Typography>
               <Stack spacing={1}>
                 {/* Drag and Drop Area */}
                 <Box
                   {...getRootProps()}
                   sx={{
-                    border: '2px dashed',
-                    borderColor: isDragActive ? 'primary.main' : 'divider',
+                    border: "2px dashed",
+                    borderColor: isDragActive ? "primary.main" : "divider",
                     borderRadius: 1,
                     p: 2,
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    bgcolor: isDragActive ? 'action.hover' : 'transparent',
-                    transition: 'all 0.2s ease',
-                    '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
+                    textAlign: "center",
+                    cursor: "pointer",
+                    bgcolor: isDragActive ? "action.hover" : "transparent",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      bgcolor: "action.hover",
+                    },
                   }}
                 >
                   <input {...getInputProps()} />
-                  <CloudUpload sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+                  <CloudUpload
+                    sx={{ fontSize: 32, color: "text.secondary", mb: 1 }}
+                  />
                   <Typography variant="body2" color="text.secondary">
-                    {t('dragAndDrop')}
+                    {t("dragAndDrop")}
                   </Typography>
                 </Box>
 
                 {/* List of existing invoices */}
                 {existingInvoices.length > 0 && (
-                  <List size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <List
+                    size="small"
+                    sx={{
+                      bgcolor: "background.paper",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
                     {existingInvoices.map((inv, idx) => (
-                      <ListItem key={inv.id} divider={idx < existingInvoices.length - 1}>
+                      <ListItem
+                        key={inv.id}
+                        divider={idx < existingInvoices.length - 1}
+                      >
                         <TextField
                           size="small"
                           fullWidth
@@ -362,10 +566,20 @@ export default function Expenses() {
                           sx={{ mr: 6 }}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton size="small" component="a" href={inv.url} download target="_blank">
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href={inv.url}
+                            download
+                            target="_blank"
+                          >
                             <Download fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" color="error" onClick={() => handleDeleteInvoice(inv.id)}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteInvoice(inv.id)}
+                          >
                             <Delete fontSize="small" />
                           </IconButton>
                         </ListItemSecondaryAction>
@@ -376,9 +590,20 @@ export default function Expenses() {
 
                 {/* List of new files to be uploaded */}
                 {selectedFiles.length > 0 && (
-                  <List size="small" sx={{ bgcolor: 'action.hover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <List
+                    size="small"
+                    sx={{
+                      bgcolor: "action.hover",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
                     {selectedFiles.map((sf, idx) => (
-                      <ListItem key={idx} divider={idx < selectedFiles.length - 1}>
+                      <ListItem
+                        key={idx}
+                        divider={idx < selectedFiles.length - 1}
+                      >
                         <TextField
                           size="small"
                           fullWidth
@@ -392,7 +617,15 @@ export default function Expenses() {
                           sx={{ mr: 4 }}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton size="small" color="error" onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              setSelectedFiles((prev) =>
+                                prev.filter((_, i) => i !== idx),
+                              )
+                            }
+                          >
                             <Close fontSize="small" />
                           </IconButton>
                         </ListItemSecondaryAction>
@@ -405,8 +638,17 @@ export default function Expenses() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setOpen(false); resetForm(); }}>{t('cancel')}</Button>
-          <Button variant="contained" onClick={handleSaveExpense}>{t('save')}</Button>
+          <Button
+            onClick={() => {
+              setOpen(false);
+              resetForm();
+            }}
+          >
+            {t("cancel")}
+          </Button>
+          <Button variant="contained" onClick={handleSaveExpense}>
+            {t("save")}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

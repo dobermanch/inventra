@@ -62,6 +62,12 @@ export const translations = {
     groupByCategory: 'Group by Category',
     filterByCategory: 'Filter by Category',
     allCategories: 'All Categories',
+    groupBy: 'Group By',
+    noGrouping: 'None',
+    byYear: 'Year',
+    byMonthYear: 'Month & Year',
+    bySubcategory: 'Subcategory',
+    byCategory: 'Category',
   },
   ua: {
     dashboard: 'Панель приладів',
@@ -126,6 +132,12 @@ export const translations = {
     groupByCategory: 'Групувати за категорією',
     filterByCategory: 'Фільтрувати за категорією',
     allCategories: 'Всі категорії',
+    groupBy: 'Групувати за',
+    noGrouping: 'Без групування',
+    byYear: 'Роком',
+    byMonthYear: 'Місяцем та роком',
+    bySubcategory: 'Підкатегорією',
+    byCategory: 'Категорією',
   }
 };
 
