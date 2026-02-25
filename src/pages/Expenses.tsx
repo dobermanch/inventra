@@ -22,6 +22,8 @@ import {
   Select,
   MenuItem,
   Chip,
+  Menu,
+  Divider,
 } from "@mui/material";
 import {
   Add,
@@ -53,6 +55,46 @@ export default function Expenses() {
   const [groupBy, setGroupBy] = useState<
     "none" | "year" | "monthYear" | "subcategory" | "category"
   >("none");
+  const [nameError, setNameError] = useState(false);
+  const [existingInvoiceErrors, setExistingInvoiceErrors] = useState<
+    Set<number>
+  >(new Set());
+  const [selectedFileErrors, setSelectedFileErrors] = useState<Set<number>>(
+    new Set(),
+  );
+  const [invoiceMenu, setInvoiceMenu] = useState<{
+    el: HTMLElement | null;
+    invoices: any[];
+    expenseName: string;
+  }>({ el: null, invoices: [], expenseName: "" });
+
+  const formatDownloadName = (expenseName: string, invoiceName: string) =>
+    `${expenseName}-${invoiceName}`.replace(/\s+/g, "-");
+
+  const handleOpenInvoiceMenu = (
+    event: React.MouseEvent<HTMLElement>,
+    invoices: any[],
+    expenseName: string,
+  ) => {
+    setInvoiceMenu({ el: event.currentTarget, invoices, expenseName });
+  };
+
+  const handleCloseInvoiceMenu = () => {
+    setInvoiceMenu({ el: null, invoices: [], expenseName: "" });
+  };
+
+  const handleDownloadAll = () => {
+    invoiceMenu.invoices.forEach((inv) => {
+      const a = document.createElement("a");
+      a.href = inv.url;
+      a.download = formatDownloadName(invoiceMenu.expenseName, inv.name);
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+    handleCloseInvoiceMenu();
+  };
 
   const [newExpense, setNewExpense] = useState({
     id: null as number | null,
@@ -77,6 +119,25 @@ export default function Expenses() {
   }, []);
 
   const handleSaveExpense = async () => {
+    if (!newExpense.name.trim()) {
+      setNameError(true);
+      return;
+    }
+    const badExisting = new Set(
+      existingInvoices
+        .map((inv, i) => (!inv.name.trim() ? i : -1))
+        .filter((i) => i !== -1),
+    );
+    const badSelected = new Set(
+      selectedFiles
+        .map((sf, i) => (!sf.name.trim() ? i : -1))
+        .filter((i) => i !== -1),
+    );
+    if (badExisting.size > 0 || badSelected.size > 0) {
+      setExistingInvoiceErrors(badExisting);
+      setSelectedFileErrors(badSelected);
+      return;
+    }
     const formData = new FormData();
     formData.append("name", newExpense.name);
     formData.append("details", newExpense.details);
@@ -131,6 +192,9 @@ export default function Expenses() {
     });
     setSelectedFiles([]);
     setExistingInvoices([]);
+    setNameError(false);
+    setExistingInvoiceErrors(new Set());
+    setSelectedFileErrors(new Set());
   };
 
   const handleEditClick = (expense: any) => {
@@ -259,22 +323,18 @@ export default function Expenses() {
         </TableCell>
         <TableCell align="right">
           <Stack direction="row" spacing={1} justifyContent="flex-end">
-            {(expense.invoices || []).map((inv: any) => (
-              <Tooltip
-                key={inv.id}
-                title={`${t("downloadInvoice")}: ${inv.name}`}
-              >
+            {(expense.invoices || []).length > 0 && (
+              <Tooltip title={t("downloadInvoice")}>
                 <IconButton
                   size="small"
-                  component="a"
-                  href={inv.url}
-                  download
-                  target="_blank"
+                  onClick={(e: React.MouseEvent<HTMLElement>) =>
+                    handleOpenInvoiceMenu(e, expense.invoices, expense.name)
+                  }
                 >
                   <Download fontSize="small" />
                 </IconButton>
               </Tooltip>
-            ))}
+            )}
             <IconButton size="small" onClick={() => handleEditClick(expense)}>
               <Edit fontSize="small" />
             </IconButton>
@@ -398,6 +458,33 @@ export default function Expenses() {
         </Table>
       </TableContainer>
 
+      <Menu
+        anchorEl={invoiceMenu.el}
+        open={Boolean(invoiceMenu.el)}
+        onClose={handleCloseInvoiceMenu}
+      >
+        {invoiceMenu.invoices.map((inv: any) => (
+          <MenuItem
+            key={inv.id}
+            component="a"
+            href={inv.url}
+            download={formatDownloadName(invoiceMenu.expenseName, inv.name)}
+            target="_blank"
+            onClick={handleCloseInvoiceMenu}
+          >
+            <Download fontSize="small" sx={{ mr: 1 }} />
+            {inv.name}
+          </MenuItem>
+        ))}
+        {invoiceMenu.invoices.length > 1 && [
+          <Divider key="divider" />,
+          <MenuItem key="all" onClick={handleDownloadAll}>
+            <Download fontSize="small" sx={{ mr: 1 }} />
+            {t("downloadAll")}
+          </MenuItem>,
+        ]}
+      </Menu>
+
       <Dialog
         open={open}
         onClose={() => {
@@ -405,7 +492,7 @@ export default function Expenses() {
           resetForm();
         }}
         fullWidth
-        maxWidth="xs"
+        maxWidth="sm"
       >
         <DialogTitle>{newExpense.id ? t("edit") : t("addExpense")}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
@@ -413,55 +500,51 @@ export default function Expenses() {
             <TextField
               label={t("expenseName")}
               fullWidth
+              required
+              error={nameError}
+              helperText={nameError ? t("nameRequired") : undefined}
               value={newExpense.name}
-              onChange={(e) =>
-                setNewExpense({ ...newExpense, name: e.target.value })
-              }
-            />
-
-            <Autocomplete
-              freeSolo
-              options={uniqueCategories}
-              value={newExpense.category}
-              onChange={(_, newValue) =>
-                setNewExpense({ ...newExpense, category: newValue || "" })
-              }
-              onInputChange={(_, newInputValue) =>
-                setNewExpense({ ...newExpense, category: newInputValue })
-              }
-              renderInput={(params) => (
-                <TextField {...params} label={t("category")} />
-              )}
-            />
-
-            <Autocomplete
-              freeSolo
-              options={uniqueSubcategories}
-              value={newExpense.subcategory}
-              onChange={(_, newValue) =>
-                setNewExpense({ ...newExpense, subcategory: newValue || "" })
-              }
-              onInputChange={(_, newInputValue) =>
-                setNewExpense({ ...newExpense, subcategory: newInputValue })
-              }
-              renderInput={(params) => (
-                <TextField {...params} label={t("subcategory")} />
-              )}
+              onChange={(e) => {
+                setNameError(false);
+                setNewExpense({ ...newExpense, name: e.target.value });
+              }}
             />
 
             <Stack direction="row" spacing={2}>
-              <TextField
-                label={t("amount")}
-                type="number"
+              <Autocomplete
+                freeSolo
                 fullWidth
-                value={newExpense.amount}
-                onChange={(e) =>
-                  setNewExpense({
-                    ...newExpense,
-                    amount: parseFloat(e.target.value) || 0,
-                  })
+                options={uniqueCategories}
+                value={newExpense.category}
+                onChange={(_, newValue) =>
+                  setNewExpense({ ...newExpense, category: newValue || "" })
                 }
+                onInputChange={(_, newInputValue) =>
+                  setNewExpense({ ...newExpense, category: newInputValue })
+                }
+                renderInput={(params) => (
+                  <TextField {...params} label={t("category")} />
+                )}
               />
+
+              <Autocomplete
+                freeSolo
+                fullWidth
+                options={uniqueSubcategories}
+                value={newExpense.subcategory}
+                onChange={(_, newValue) =>
+                  setNewExpense({ ...newExpense, subcategory: newValue || "" })
+                }
+                onInputChange={(_, newInputValue) =>
+                  setNewExpense({ ...newExpense, subcategory: newInputValue })
+                }
+                renderInput={(params) => (
+                  <TextField {...params} label={t("subcategory")} />
+                )}
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
               <TextField
                 label={t("quantity")}
                 type="number"
@@ -475,20 +558,34 @@ export default function Expenses() {
                 }
                 inputProps={{ step: "0.01" }}
               />
+              <TextField
+                label={t("amount")}
+                type="number"
+                fullWidth
+                value={newExpense.amount}
+                onChange={(e) =>
+                  setNewExpense({
+                    ...newExpense,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
+              <TextField
+                label={t("totalPrice")}
+                fullWidth
+                value={
+                  "$" +
+                  (newExpense.amount * newExpense.quantity).toLocaleString()
+                }
+                disabled
+              />
             </Stack>
-
-            <TextField
-              label={t("totalPrice")}
-              fullWidth
-              value={(newExpense.amount * newExpense.quantity).toLocaleString()}
-              disabled
-            />
 
             <TextField
               label={t("details")}
               fullWidth
               multiline
-              rows={2}
+              rows={5}
               value={newExpense.details}
               onChange={(e) =>
                 setNewExpense({ ...newExpense, details: e.target.value })
@@ -556,13 +653,20 @@ export default function Expenses() {
                         <TextField
                           size="small"
                           fullWidth
+                          error={existingInvoiceErrors.has(idx)}
                           value={inv.name}
                           onChange={(e) => {
                             const updated = [...existingInvoices];
                             updated[idx].name = e.target.value;
                             setExistingInvoices(updated);
+                            if (e.target.value.trim()) {
+                              setExistingInvoiceErrors((prev) => {
+                                const next = new Set(prev);
+                                next.delete(idx);
+                                return next;
+                              });
+                            }
                           }}
-                          variant="standard"
                           sx={{ mr: 6 }}
                         />
                         <ListItemSecondaryAction>
@@ -607,13 +711,20 @@ export default function Expenses() {
                         <TextField
                           size="small"
                           fullWidth
+                          error={selectedFileErrors.has(idx)}
                           value={sf.name}
                           onChange={(e) => {
                             const updated = [...selectedFiles];
                             updated[idx].name = e.target.value;
                             setSelectedFiles(updated);
+                            if (e.target.value.trim()) {
+                              setSelectedFileErrors((prev) => {
+                                const next = new Set(prev);
+                                next.delete(idx);
+                                return next;
+                              });
+                            }
                           }}
-                          variant="standard"
                           sx={{ mr: 4 }}
                         />
                         <ListItemSecondaryAction>

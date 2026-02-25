@@ -626,7 +626,7 @@ async function startServer() {
   app.delete('/api/expenses/:id', (req, res) => {
     try {
       const { id } = req.params;
-      const invoices = db.prepare('SELECT url FROM expense_invoices WHERE expense_id = ?').all() as any[];
+      const invoices = db.prepare('SELECT url FROM expense_invoices WHERE expense_id = ?').all(id) as any[];
       
       invoices.forEach(inv => {
         const relativePath = inv.url.replace('/uploads/', '');
