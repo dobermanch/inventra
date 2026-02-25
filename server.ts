@@ -41,6 +41,19 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+const VALID_ORDER_STATUSES = [
+  "active",
+  "shipped",
+  "delivered",
+  "canceled",
+  "returned",
+] as const;
+type OrderStatusType = (typeof VALID_ORDER_STATUSES)[number];
+
+function isValidOrderStatus(s: string): s is OrderStatusType {
+  return (VALID_ORDER_STATUSES as readonly string[]).includes(s);
+}
+
 // Initialize Database Schema
 db.exec(`
   CREATE TABLE IF NOT EXISTS categories (
@@ -102,13 +115,31 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    status TEXT NOT NULL, -- active, shipped, delivered, canceled, returned
+    status TEXT NOT NULL CHECK(status IN ('active', 'shipped', 'delivered', 'canceled', 'returned')),
     customer_details TEXT, -- JSON
     discount REAL DEFAULT 0,
     total_amount REAL NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     returned_at DATETIME
   );
+
+  CREATE TRIGGER IF NOT EXISTS trg_orders_status_insert
+  BEFORE INSERT ON orders
+  BEGIN
+    SELECT CASE
+      WHEN NEW.status NOT IN ('active', 'shipped', 'delivered', 'canceled', 'returned')
+      THEN RAISE(ABORT, 'Invalid order status')
+    END;
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS trg_orders_status_update
+  BEFORE UPDATE OF status ON orders
+  BEGIN
+    SELECT CASE
+      WHEN NEW.status NOT IN ('active', 'shipped', 'delivered', 'canceled', 'returned')
+      THEN RAISE(ABORT, 'Invalid order status')
+    END;
+  END;
 
   CREATE TABLE IF NOT EXISTS order_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -614,6 +645,10 @@ async function startServer() {
     const { status, customer_details, discount, total_amount, items, notes } =
       req.body;
 
+    if (!isValidOrderStatus(status)) {
+      return res.status(400).json({ error: "Invalid order status" });
+    }
+
     const transaction = db.transaction(() => {
       const info = db
         .prepare(
@@ -657,6 +692,10 @@ async function startServer() {
       const { id } = req.params;
       const { status, customer_details, discount, total_amount, items, notes } =
         req.body;
+
+      if (!isValidOrderStatus(status)) {
+        return res.status(400).json({ error: "Invalid order status" });
+      }
 
       const transaction = db.transaction(() => {
         // 1. Restore stock for existing items
@@ -717,6 +756,10 @@ async function startServer() {
   app.patch("/api/orders/:id/status", (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
+
+    if (!isValidOrderStatus(status)) {
+      return res.status(400).json({ error: "Invalid order status" });
+    }
 
     const transaction = db.transaction(() => {
       const oldOrder = db

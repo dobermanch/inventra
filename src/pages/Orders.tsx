@@ -42,6 +42,12 @@ import {
   Search,
 } from "@mui/icons-material";
 import { useLanguage } from "../context/LanguageContext";
+import {
+  OrderStatus,
+  ORDER_STATUSES,
+  STATUS_TRANSLATION_KEY,
+  getStatusColor,
+} from "../types/orderStatus";
 
 export default function Orders() {
   const { t } = useLanguage();
@@ -58,7 +64,7 @@ export default function Orders() {
   const [newOrder, setNewOrder] = useState({
     id: null as number | null,
     customer_details: { name: "", phone: "", email: "", address: "" },
-    status: "active",
+    status: OrderStatus.Active,
     discount: 0,
     notes: "",
     items: [] as any[],
@@ -119,7 +125,7 @@ export default function Orders() {
     setNewOrder({
       id: null,
       customer_details: { name: "", phone: "", email: "", address: "" },
-      status: "active",
+      status: OrderStatus.Active,
       discount: 0,
       notes: "",
       items: [] as any[],
@@ -151,7 +157,7 @@ export default function Orders() {
     setOpen(true);
   };
 
-  const updateStatus = async (id: number, status: string) => {
+  const updateStatus = async (id: number, status: OrderStatus) => {
     await fetch(`/api/orders/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -159,23 +165,6 @@ export default function Orders() {
     });
     fetchOrders();
     fetchInventory();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "primary";
-      case "shipped":
-        return "info";
-      case "delivered":
-        return "success";
-      case "canceled":
-        return "error";
-      case "returned":
-        return "warning";
-      default:
-        return "default";
-    }
   };
 
   // Flatten inventory for autocomplete
@@ -233,7 +222,7 @@ export default function Orders() {
       );
     }
     if (groupBy === "status") {
-      return key.charAt(0).toUpperCase() + key.slice(1);
+      return t(STATUS_TRANSLATION_KEY[key as OrderStatus]);
     }
     return key;
   };
@@ -296,7 +285,7 @@ export default function Orders() {
         <TableCell>${order.total_amount.toLocaleString()}</TableCell>
         <TableCell>
           <Chip
-            label={order.status}
+            label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
             size="small"
             color={getStatusColor(order.status) as any}
           />
@@ -307,45 +296,46 @@ export default function Orders() {
               <Edit fontSize="small" />
             </IconButton>
           </Tooltip>
-          {order.status === "active" && (
+          {order.status === OrderStatus.Active && (
             <Tooltip title={t("markAsShipped")}>
               <IconButton
                 size="small"
                 color="info"
-                onClick={() => updateStatus(order.id, "shipped")}
+                onClick={() => updateStatus(order.id, OrderStatus.Shipped)}
               >
                 <LocalShipping />
               </IconButton>
             </Tooltip>
           )}
-          {order.status === "shipped" && (
+          {order.status === OrderStatus.Shipped && (
             <Tooltip title={t("markAsDelivered")}>
               <IconButton
                 size="small"
                 color="success"
-                onClick={() => updateStatus(order.id, "delivered")}
+                onClick={() => updateStatus(order.id, OrderStatus.Delivered)}
               >
                 <CheckCircle />
               </IconButton>
             </Tooltip>
           )}
-          {(order.status === "active" || order.status === "shipped") && (
+          {(order.status === OrderStatus.Active ||
+            order.status === OrderStatus.Shipped) && (
             <Tooltip title={t("markAsCanceled")}>
               <IconButton
                 size="small"
                 color="error"
-                onClick={() => updateStatus(order.id, "canceled")}
+                onClick={() => updateStatus(order.id, OrderStatus.Canceled)}
               >
                 <Cancel />
               </IconButton>
             </Tooltip>
           )}
-          {order.status === "delivered" && (
+          {order.status === OrderStatus.Delivered && (
             <Tooltip title={t("markAsReturned")}>
               <IconButton
                 size="small"
                 color="warning"
-                onClick={() => updateStatus(order.id, "returned")}
+                onClick={() => updateStatus(order.id, OrderStatus.Returned)}
               >
                 <Undo />
               </IconButton>
@@ -391,11 +381,11 @@ export default function Orders() {
               onChange={(e) => setFilterStatus(e.target.value)}
             >
               <MenuItem value="all">{t("allStatuses")}</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="shipped">Shipped</MenuItem>
-              <MenuItem value="delivered">Delivered</MenuItem>
-              <MenuItem value="canceled">Canceled</MenuItem>
-              <MenuItem value="returned">Returned</MenuItem>
+              {ORDER_STATUSES.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {t(STATUS_TRANSLATION_KEY[s])}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -582,18 +572,21 @@ export default function Orders() {
             {newOrder.id && (
               <TextField
                 select
-                label="Status"
+                label={t("status")}
                 fullWidth
                 value={newOrder.status}
                 onChange={(e) =>
-                  setNewOrder({ ...newOrder, status: e.target.value })
+                  setNewOrder({
+                    ...newOrder,
+                    status: e.target.value as OrderStatus,
+                  })
                 }
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="shipped">Shipped</MenuItem>
-                <MenuItem value="delivered">Delivered</MenuItem>
-                <MenuItem value="canceled">Canceled</MenuItem>
-                <MenuItem value="returned">Returned</MenuItem>
+                {ORDER_STATUSES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {t(STATUS_TRANSLATION_KEY[s])}
+                  </MenuItem>
+                ))}
               </TextField>
             )}
 

@@ -27,6 +27,12 @@ import {
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useLanguage } from "../context/LanguageContext";
+import {
+  OrderStatus,
+  ORDER_STATUSES,
+  STATUS_TRANSLATION_KEY,
+  getStatusColor,
+} from "../types/orderStatus";
 
 export default function Sales() {
   const { t } = useLanguage();
@@ -63,7 +69,10 @@ export default function Sales() {
   });
 
   const totalRevenue = filteredOrders
-    .filter((o) => o.status !== "canceled" && o.status !== "returned")
+    .filter(
+      (o) =>
+        o.status !== OrderStatus.Canceled && o.status !== OrderStatus.Returned,
+    )
     .reduce((sum, o) => sum + o.total_amount, 0);
 
   const getGroupKey = (order: any): string => {
@@ -90,7 +99,7 @@ export default function Sales() {
       );
     }
     if (groupBy === "status") {
-      return key.charAt(0).toUpperCase() + key.slice(1);
+      return t(STATUS_TRANSLATION_KEY[key as OrderStatus]);
     }
     return key;
   };
@@ -115,23 +124,6 @@ export default function Sales() {
           : a.localeCompare(b),
       )
     : [];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "primary";
-      case "shipped":
-        return "info";
-      case "delivered":
-        return "success";
-      case "canceled":
-        return "error";
-      case "returned":
-        return "warning";
-      default:
-        return "default";
-    }
-  };
 
   const renderTableRows = (items: any[]) =>
     items.map((order) => {
@@ -170,7 +162,7 @@ export default function Sales() {
           </TableCell>
           <TableCell>
             <Chip
-              label={order.status}
+              label={t(STATUS_TRANSLATION_KEY[order.status as OrderStatus])}
               size="small"
               variant="outlined"
               color={getStatusColor(order.status) as any}
@@ -223,11 +215,11 @@ export default function Sales() {
               onChange={(e) => setFilterStatus(e.target.value)}
             >
               <MenuItem value="all">{t("allOrders")}</MenuItem>
-              <MenuItem value="active">{t("statusActive")}</MenuItem>
-              <MenuItem value="shipped">{t("statusShipped")}</MenuItem>
-              <MenuItem value="delivered">{t("statusDelivered")}</MenuItem>
-              <MenuItem value="canceled">{t("statusCanceled")}</MenuItem>
-              <MenuItem value="returned">{t("statusReturned")}</MenuItem>
+              {ORDER_STATUSES.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {t(STATUS_TRANSLATION_KEY[s])}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -271,7 +263,8 @@ export default function Sales() {
                   const groupTotal = groupItems
                     .filter(
                       (o) =>
-                        o.status !== "canceled" && o.status !== "returned",
+                        o.status !== OrderStatus.Canceled &&
+                        o.status !== OrderStatus.Returned,
                     )
                     .reduce((sum, o) => sum + o.total_amount, 0);
                   return (
@@ -361,7 +354,9 @@ export default function Sales() {
                     {t("status")}:
                   </Typography>
                   <Chip
-                    label={viewOrder.status}
+                    label={t(
+                      STATUS_TRANSLATION_KEY[viewOrder.status as OrderStatus],
+                    )}
                     size="small"
                     color={getStatusColor(viewOrder.status) as any}
                   />

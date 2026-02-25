@@ -30,17 +30,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useLanguage } from "../context/LanguageContext";
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "active":
-      return "primary";
-    case "shipped":
-      return "info";
-    default:
-      return "default";
-  }
-};
+import {
+  OrderStatus,
+  STATUS_TRANSLATION_KEY,
+  getStatusColor,
+} from "../types/orderStatus";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -233,7 +227,11 @@ export default function Dashboard() {
                           sx={{ ml: 2, flexShrink: 0 }}
                         >
                           <Chip
-                            label={order.status}
+                            label={t(
+                              STATUS_TRANSLATION_KEY[
+                                order.status as OrderStatus
+                              ],
+                            )}
                             size="small"
                             variant="outlined"
                             color={getStatusColor(order.status) as any}
