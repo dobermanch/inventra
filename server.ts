@@ -158,7 +158,11 @@ try {
     )
   `).run();
 
-  const expensesWithInvoices = db.prepare('SELECT id, picture_url, invoice_name FROM expenses WHERE picture_url IS NOT NULL AND picture_url != ""').all() as any[];
+  const expenseTableInfo = db.prepare("PRAGMA table_info(expenses)").all() as any[];
+  const hasPictureUrl = expenseTableInfo.some((col: any) => col.name === 'picture_url');
+  const expensesWithInvoices = hasPictureUrl
+    ? db.prepare('SELECT id, picture_url, invoice_name FROM expenses WHERE picture_url IS NOT NULL AND picture_url != ""').all() as any[]
+    : [];
   
   for (const exp of expensesWithInvoices) {
     db.prepare('INSERT INTO expense_invoices (expense_id, name, url) VALUES (?, ?, ?)')
@@ -279,7 +283,7 @@ async function startServer() {
       const { name, description, category_id, low_stock_threshold, price, variants } = req.body;
       const parsedVariants = JSON.parse(variants || '[]');
       
-      const item = db.prepare('SELECT picture_url FROM items WHERE id = ?').get() as any;
+      const item = db.prepare('SELECT picture_url FROM items WHERE id = ?').get(id) as any;
       if (!item) return res.status(404).json({ error: 'Item not found' });
       
       const picture_url = req.file ? `/uploads/${req.file.filename}` : req.body.picture_url || item.picture_url;
@@ -304,10 +308,33 @@ async function startServer() {
           id: id
         });
         
-        db.prepare('DELETE FROM item_variants WHERE item_id = ?').run(id);
+        // Preserve existing variant IDs to avoid breaking order_items / restock_history FK references.
+        // UPDATE variants that already exist, INSERT new ones, and only DELETE removed variants
+        // that are not referenced by any order or restock record.
+        const existingVariants = db.prepare('SELECT id FROM item_variants WHERE item_id = ?').all(id) as any[];
+        const existingIds = new Set(existingVariants.map((v: any) => Number(v.id)));
+        const incomingIds = new Set(parsedVariants.filter((v: any) => v.id).map((v: any) => Number(v.id)));
+
+        const updateVariant = db.prepare('UPDATE item_variants SET size = ?, stock_count = ? WHERE id = ? AND item_id = ?');
         const insertVariant = db.prepare('INSERT INTO item_variants (item_id, size, stock_count) VALUES (?, ?, ?)');
+
         for (const v of parsedVariants) {
-          insertVariant.run(id, v.size || '', parseInt(v.stock_count) || 0);
+          if (v.id && existingIds.has(Number(v.id))) {
+            updateVariant.run(v.size || '', parseInt(v.stock_count) || 0, v.id, id);
+          } else {
+            insertVariant.run(id, v.size || '', parseInt(v.stock_count) || 0);
+          }
+        }
+
+        // Only delete variants that were removed and have no FK references
+        for (const existingId of existingIds) {
+          if (!incomingIds.has(existingId)) {
+            const referencedByOrder = db.prepare('SELECT 1 FROM order_items WHERE variant_id = ? LIMIT 1').get(existingId);
+            const referencedByRestock = db.prepare('SELECT 1 FROM restock_history WHERE variant_id = ? LIMIT 1').get(existingId);
+            if (!referencedByOrder && !referencedByRestock) {
+              db.prepare('DELETE FROM item_variants WHERE id = ?').run(existingId);
+            }
+          }
         }
       });
 
@@ -429,7 +456,7 @@ async function startServer() {
     const { status } = req.body;
     
     const transaction = db.transaction(() => {
-      const oldOrder = db.prepare('SELECT status FROM orders WHERE id = ?').get() as any;
+      const oldOrder = db.prepare('SELECT status FROM orders WHERE id = ?').get(id) as any;
       
       // If canceling or returning, restore inventory
       if ((status === 'canceled' || status === 'returned') && (oldOrder.status !== 'canceled' && oldOrder.status !== 'returned')) {
@@ -578,7 +605,7 @@ async function startServer() {
   app.delete('/api/expenses/invoices/:id', (req, res) => {
     try {
       const { id } = req.params;
-      const invoice = db.prepare('SELECT * FROM expense_invoices WHERE id = ?').get() as any;
+      const invoice = db.prepare('SELECT * FROM expense_invoices WHERE id = ?').get(id) as any;
       
       if (invoice) {
         const relativePath = invoice.url.replace('/uploads/', '');

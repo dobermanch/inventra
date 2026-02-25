@@ -1,51 +1,57 @@
-import React from 'react';
-import { 
-  Box, 
-  Drawer, 
-  AppBar, 
-  Toolbar, 
-  List, 
-  Typography, 
-  Divider, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
+import React from "react";
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  List,
+  Typography,
+  Divider,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
   CssBaseline,
   ThemeProvider,
-  createTheme
-} from '@mui/material';
-import { 
-  Dashboard as DashboardIcon, 
-  Inventory as InventoryIcon, 
-  ShoppingCart as OrdersIcon, 
+  createTheme,
+} from "@mui/material";
+import {
+  Dashboard as DashboardIcon,
+  Inventory as InventoryIcon,
+  ShoppingCart as OrdersIcon,
   ReceiptLong as ExpensesIcon,
   TrendingUp as SalesIcon,
-  Settings as SettingsIcon
-} from '@mui/icons-material';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+  Settings as SettingsIcon,
+} from "@mui/icons-material";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 // Pages
-import Dashboard from './pages/Dashboard';
-import Inventory from './pages/Inventory';
-import Orders from './pages/Orders';
-import Expenses from './pages/Expenses';
-import Sales from './pages/Sales';
-import Settings from './pages/Settings';
-import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import Dashboard from "./pages/Dashboard";
+import Inventory from "./pages/Inventory";
+import Orders from "./pages/Orders";
+import Expenses from "./pages/Expenses";
+import Sales from "./pages/Sales";
+import Settings from "./pages/Settings";
+import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 
 const drawerWidth = 240;
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1a1a1a',
+      main: "#2563EB",
     },
     secondary: {
-      main: '#f27d26',
+      main: "#10B981",
     },
     background: {
-      default: '#f5f5f5',
+      default: "#f5f5f5",
     },
   },
   typography: {
@@ -58,7 +64,7 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: 'none',
+          textTransform: "none",
           borderRadius: 8,
         },
       },
@@ -67,7 +73,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
         },
       },
     },
@@ -80,21 +86,35 @@ function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useLanguage();
 
   const menuItems = [
-    { text: t('dashboard'), icon: <DashboardIcon />, path: '/' },
-    { text: t('inventory'), icon: <InventoryIcon />, path: '/inventory' },
-    { text: t('orders'), icon: <OrdersIcon />, path: '/orders' },
-    { text: t('sales'), icon: <OrdersIcon />, path: '/sales' },
-    { text: t('expenses'), icon: <ExpensesIcon />, path: '/expenses' },
-    { text: t('settings'), icon: <SettingsIcon />, path: '/settings' },
+    { text: t("dashboard"), icon: <DashboardIcon />, path: "/" },
+    { text: t("inventory"), icon: <InventoryIcon />, path: "/inventory" },
+    { text: t("orders"), icon: <OrdersIcon />, path: "/orders" },
+    { text: t("sales"), icon: <SalesIcon />, path: "/sales" },
+    { text: t("expenses"), icon: <ExpensesIcon />, path: "/expenses" },
+    { text: t("settings"), icon: <SettingsIcon />, path: "/settings" },
   ];
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: 'white', color: 'text.primary', boxShadow: 'none', borderBottom: '1px solid #e0e0e0' }}>
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          bgcolor: "white",
+          color: "text.primary",
+          boxShadow: "none",
+          borderBottom: "1px solid #e0e0e0",
+        }}
+      >
         <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, color: 'primary.main' }}>
-            NEXUS <span style={{ color: '#f27d26' }}>OMS</span>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ fontWeight: 700, color: "primary.main" }}
+          >
+            STOKLY <span style={{ color: "#f27d26" }}>OMS</span>
           </Typography>
         </Toolbar>
       </AppBar>
@@ -103,40 +123,56 @@ function Layout({ children }: { children: React.ReactNode }) {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box', borderRight: '1px solid #e0e0e0' },
+          [`& .MuiDrawer-paper`]: {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            borderRight: "1px solid #e0e0e0",
+          },
         }}
       >
         <Toolbar />
-        <Box sx={{ overflow: 'auto', mt: 2 }}>
+        <Box sx={{ overflow: "auto", mt: 2 }}>
           <List>
             {menuItems.map((item) => (
               <ListItem key={item.text} disablePadding>
-                <ListItemButton 
+                <ListItemButton
                   onClick={() => navigate(item.path)}
                   selected={location.pathname === item.path}
                   sx={{
                     mx: 1,
                     borderRadius: 2,
                     mb: 0.5,
-                    '&.Mui-selected': {
-                      bgcolor: 'secondary.main',
-                      color: 'white',
-                      '& .MuiListItemIcon-root': { color: 'white' },
-                      '&:hover': { bgcolor: 'secondary.dark' }
-                    }
+                    "&.Mui-selected": {
+                      bgcolor: "secondary.main",
+                      color: "white",
+                      "& .MuiListItemIcon-root": { color: "white" },
+                      "&:hover": { bgcolor: "secondary.dark" },
+                    },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }} />
+                  <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: "0.9rem",
+                      fontWeight: 500,
+                    }}
+                  />
                 </ListItemButton>
               </ListItem>
             ))}
           </List>
         </Box>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          minHeight: "100vh",
+          bgcolor: "background.default",
+        }}
+      >
         <Toolbar />
         {children}
       </Box>
