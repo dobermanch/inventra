@@ -32,6 +32,7 @@ import {
   CloudUpload,
   Download,
   Close,
+  Search,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -39,6 +40,7 @@ import {
   List,
   ListItem,
   ListItemSecondaryAction,
+  InputAdornment,
 } from "@mui/material";
 import { useLanguage } from "../context/LanguageContext";
 import { useDropzone } from "react-dropzone";
@@ -52,6 +54,7 @@ export default function Expenses() {
   >([]);
   const [existingInvoices, setExistingInvoices] = useState<any[]>([]);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [groupBy, setGroupBy] = useState<
     "none" | "year" | "monthYear" | "subcategory" | "category"
   >("none");
@@ -235,9 +238,15 @@ export default function Expenses() {
     new Set(expenses.map((e) => e.subcategory).filter(Boolean)),
   );
 
-  const filteredExpenses = expenses.filter(
-    (e) => filterCategory === "all" || e.category === filterCategory,
-  );
+  const filteredExpenses = expenses.filter((e) => {
+    if (filterCategory !== "all" && e.category !== filterCategory) return false;
+    if (searchText.trim()) {
+      const lower = searchText.toLowerCase();
+      const haystack = [e.name, e.details || ""].join(" ").toLowerCase();
+      if (!haystack.includes(lower)) return false;
+    }
+    return true;
+  });
 
   const getGroupKey = (expense: any): string => {
     const date = new Date(expense.date);
@@ -374,6 +383,20 @@ export default function Expenses() {
       >
         <Typography variant="h5">{t("expenses")}</Typography>
         <Stack direction="row" spacing={2}>
+          <TextField
+            size="small"
+            placeholder={t("searchExpenses")}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            sx={{ minWidth: 240 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>{t("filterByCategory")}</InputLabel>
             <Select

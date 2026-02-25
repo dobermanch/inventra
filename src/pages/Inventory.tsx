@@ -21,6 +21,7 @@ import {
   InputLabel,
   Select,
   Autocomplete,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add,
@@ -29,6 +30,7 @@ import {
   Edit,
   CloudUpload,
   Delete,
+  Search,
 } from "@mui/icons-material";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -47,6 +49,7 @@ export default function Inventory() {
   const [categoryError, setCategoryError] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [searchText, setSearchText] = useState("");
 
   const [newItem, setNewItem] = useState<any>({
     id: null,
@@ -190,6 +193,20 @@ export default function Inventory() {
       >
         <Typography variant="h5">{t("inventoryManagement")}</Typography>
         <Stack direction="row" spacing={2}>
+          <TextField
+            size="small"
+            placeholder={t("searchInventory")}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            sx={{ minWidth: 240 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>{t("filterByCategory")}</InputLabel>
             <Select
@@ -223,7 +240,15 @@ export default function Inventory() {
       </Box>
 
       <Grid container spacing={3}>
-        {items.filter((item) => categoryFilter === null || item.category_name === categoryFilter).map((item) => (
+        {items.filter((item) => {
+          if (categoryFilter !== null && item.category_name !== categoryFilter) return false;
+          if (searchText.trim()) {
+            const lower = searchText.toLowerCase();
+            const haystack = [item.name, item.description || ""].join(" ").toLowerCase();
+            if (!haystack.includes(lower)) return false;
+          }
+          return true;
+        }).map((item) => (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
             <Card
               sx={{ height: "100%", display: "flex", flexDirection: "column" }}
