@@ -50,6 +50,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.semver.outputs.VERSION }}
             ghcr.io/${{ github.repository }}:latest
+          labels: |
+            org.opencontainers.image.version=${{ steps.semver.outputs.VERSION }}
 
       - name: Create GitHub Release
         env:

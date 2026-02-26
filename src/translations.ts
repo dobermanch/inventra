@@ -139,6 +139,13 @@ export const translations = {
     chooseLanguageDescription: "Choose your preferred language for the interface.",
     defaultCurrencyDescription: "Default currency for sales and expenses.",
     appMotto: "Track. Sell. Grow.",
+    import: "Import",
+    export: "Export",
+    downloadTemplate: "Download Template",
+    importing: "Importing…",
+    importSuccess: "{count} record(s) imported successfully",
+    importErrors: "{count} row(s) had errors",
+    importFile: "Drag & drop an .xlsx file here, or click to select",
   },
   ua: {
     dashboard: "Панель приладів",
@@ -280,6 +287,13 @@ export const translations = {
     chooseLanguageDescription: "Виберіть бажану мову інтерфейсу.",
     defaultCurrencyDescription: "Валюта за замовчуванням для продажів та витрат.",
     appMotto: "Відстежуй. Продавай. Зростай.",
+    import: "Імпорт",
+    export: "Експорт",
+    downloadTemplate: "Завантажити шаблон",
+    importing: "Імпортування…",
+    importSuccess: "{count} запис(ів) успішно імпортовано",
+    importErrors: "{count} рядок(ів) мали помилки",
+    importFile: "Перетягніть файл .xlsx сюди або клацніть для вибору",
   },
 };
 

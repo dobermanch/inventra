@@ -47,9 +47,12 @@ import {
   IconCloudUpload as CloudUpload,
   IconDownload as Download,
   IconX as Close,
+  IconFileImport as FileImport,
+  IconFileDownload as FileDownload,
 } from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
+import ExcelImportDialog from "../components/ExcelImportDialog";
 import {
   OrderStatus,
   ORDER_STATUSES,
@@ -66,6 +69,14 @@ export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const handleExport = () => {
+    const a = document.createElement("a");
+    a.href = "/api/export/orders";
+    a.download = "orders.xlsx";
+    a.click();
+  };
 
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchText, setSearchText] = useState("");
@@ -504,6 +515,22 @@ export default function Orders() {
               <MenuItem value="status">{t("byStatus")}</MenuItem>
             </Select>
           </FormControl>
+          <Button
+            variant="outlined"
+            startIcon={<FileImport size={18} />}
+            fullWidth={isMobile}
+            onClick={() => setImportOpen(true)}
+          >
+            {t("import")}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownload size={18} />}
+            fullWidth={isMobile}
+            onClick={handleExport}
+          >
+            {t("export")}
+          </Button>
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -1012,6 +1039,14 @@ export default function Orders() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ExcelImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={fetchOrders}
+        entity="orders"
+        title={t("import")}
+      />
     </Box>
   );
 }

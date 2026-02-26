@@ -4,7 +4,9 @@
       "Bash(grep -o \"t\\(\"\"[^\"\"]*\"\"\\)\" /workspaces/inventra/src/pages/*.tsx)",
       "Bash(comm -13 /tmp/used_keys.txt /tmp/defined_keys.txt)",
       "Bash(npm install @tabler/icons-react)",
-      "Bash(npm uninstall @mui/icons-material)"
+      "Bash(npm uninstall @mui/icons-material)",
+      "Bash(grep -E \"Icon\\(Table|File\\)\" /workspaces/inventra/src/pages/*.tsx)",
+      "Bash(npm install xlsx)"
     ]
   }
 }

@@ -34,9 +34,12 @@ import {
   IconCloudUpload as CloudUpload,
   IconTrash as Delete,
   IconSearch as Search,
+  IconFileImport as FileImport,
+  IconFileDownload as FileDownload,
 } from "@tabler/icons-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
+import ExcelImportDialog from "../components/ExcelImportDialog";
 
 export default function Inventory() {
   const { t } = useLanguage();
@@ -59,6 +62,14 @@ export default function Inventory() {
     [],
   );
   const [searchText, setSearchText] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+
+  const handleExport = () => {
+    const a = document.createElement("a");
+    a.href = "/api/export/inventory";
+    a.download = "inventory.xlsx";
+    a.click();
+  };
 
   const [newItem, setNewItem] = useState<any>({
     id: null,
@@ -241,6 +252,22 @@ export default function Inventory() {
               ))}
             </Select>
           </FormControl>
+          <Button
+            variant="outlined"
+            startIcon={<FileImport size={18} />}
+            fullWidth={isMobile}
+            onClick={() => setImportOpen(true)}
+          >
+            {t("import")}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownload size={18} />}
+            fullWidth={isMobile}
+            onClick={handleExport}
+          >
+            {t("export")}
+          </Button>
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -632,6 +659,14 @@ export default function Inventory() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ExcelImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={fetchInventory}
+        entity="inventory"
+        title={t("import")}
+      />
     </Box>
   );
 }

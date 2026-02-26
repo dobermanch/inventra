@@ -36,6 +36,8 @@ import {
   IconDownload as Download,
   IconX as Close,
   IconSearch as Search,
+  IconFileImport as FileImport,
+  IconFileDownload as FileDownload,
 } from "@tabler/icons-react";
 import {
   IconButton,
@@ -48,6 +50,7 @@ import {
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useDropzone } from "react-dropzone";
+import ExcelImportDialog from "../components/ExcelImportDialog";
 
 export default function Expenses() {
   const { t } = useLanguage();
@@ -57,6 +60,15 @@ export default function Expenses() {
   const isNarrow = useMediaQuery(theme.breakpoints.down("md"));
   const [expenses, setExpenses] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const handleExport = () => {
+    const a = document.createElement("a");
+    a.href = "/api/export/expenses";
+    a.download = "expenses.xlsx";
+    a.click();
+  };
+
   const [selectedFiles, setSelectedFiles] = useState<
     { file: File; name: string }[]
   >([]);
@@ -464,6 +476,22 @@ export default function Expenses() {
               <MenuItem value="category">{t("byCategory")}</MenuItem>
             </Select>
           </FormControl>
+          <Button
+            variant="outlined"
+            startIcon={<FileImport size={18} />}
+            fullWidth={isMobile}
+            onClick={() => setImportOpen(true)}
+          >
+            {t("import")}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownload size={18} />}
+            fullWidth={isMobile}
+            onClick={handleExport}
+          >
+            {t("export")}
+          </Button>
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -896,6 +924,14 @@ export default function Expenses() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ExcelImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={fetchExpenses}
+        entity="expenses"
+        title={t("import")}
+      />
     </Box>
   );
 }

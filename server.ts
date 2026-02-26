@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
 import fs from "fs";
+import * as XLSX from "xlsx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -46,6 +47,17 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok =
+      file.mimetype.includes("spreadsheetml") ||
+      file.mimetype.includes("ms-excel");
+    cb(null, ok);
+  },
+});
 
 const VALID_ORDER_STATUSES = [
   "active",
@@ -1039,6 +1051,354 @@ async function startServer() {
       res.json({ success: true });
     } catch (error) {
       console.error("Expense delete error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ── Excel Export ──────────────────────────────────────────────────────────
+
+  app.get("/api/export/inventory", (_req, res) => {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT i.name AS "Name", i.description AS "Description",
+                  COALESCE(c.name,'Uncategorized') AS "Category",
+                  i.price AS "Price", i.low_stock_threshold AS "Low Stock Threshold",
+                  v.size AS "Size", v.stock_count AS "Stock Count"
+           FROM items i
+           LEFT JOIN categories c ON i.category_id = c.id
+           LEFT JOIN item_variants v ON v.item_id = i.id
+           WHERE i.is_deleted = 0
+           ORDER BY i.name, v.size`
+        )
+        .all();
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Inventory");
+      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      res.setHeader("Content-Disposition", 'attachment; filename="inventory.xlsx"');
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.send(buf);
+    } catch (error) {
+      console.error("Export inventory error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/export/orders", (_req, res) => {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT o.id AS "Order ID",
+                  JSON_EXTRACT(o.customer_details,'$.name') AS "Customer Name",
+                  JSON_EXTRACT(o.customer_details,'$.phone') AS "Customer Phone",
+                  JSON_EXTRACT(o.customer_details,'$.address') AS "Customer Address",
+                  o.status AS "Status",
+                  o.discount AS "Discount",
+                  o.notes AS "Notes",
+                  i.name AS "Product Name",
+                  v.size AS "Size",
+                  oi.quantity AS "Quantity",
+                  oi.unit_price AS "Unit Price",
+                  o.total_amount AS "Total Amount",
+                  o.created_at AS "Created At"
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           LEFT JOIN item_variants v ON oi.variant_id = v.id
+           LEFT JOIN items i ON v.item_id = i.id
+           ORDER BY o.id`
+        )
+        .all();
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Orders");
+      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      res.setHeader("Content-Disposition", 'attachment; filename="orders.xlsx"');
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.send(buf);
+    } catch (error) {
+      console.error("Export orders error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/export/expenses", (_req, res) => {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT name AS "Name", details AS "Details", category AS "Category",
+                  subcategory AS "Subcategory", amount AS "Amount",
+                  quantity AS "Quantity", total_amount AS "Total Amount", date AS "Date"
+           FROM expenses ORDER BY date DESC`
+        )
+        .all();
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Expenses");
+      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      res.setHeader("Content-Disposition", 'attachment; filename="expenses.xlsx"');
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.send(buf);
+    } catch (error) {
+      console.error("Export expenses error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ── Excel Templates ────────────────────────────────────────────────────────
+
+  app.get("/api/export/template/inventory", (_req, res) => {
+    const rows = [
+      {
+        Name: "Example T-Shirt",
+        Description: "A comfortable cotton t-shirt",
+        Category: "Clothes",
+        Price: 29.99,
+        "Low Stock Threshold": 5,
+        Size: "M",
+        "Stock Count": 10,
+      },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Inventory");
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Disposition", 'attachment; filename="inventory_template.xlsx"');
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buf);
+  });
+
+  app.get("/api/export/template/orders", (_req, res) => {
+    const rows = [
+      {
+        "Customer Name": "Jane Doe",
+        "Customer Phone": "+1 555-0100",
+        "Customer Address": "123 Main St",
+        Status: "active",
+        Discount: 0,
+        Notes: "",
+        "Product Name": "Example T-Shirt",
+        Size: "M",
+        Quantity: 1,
+        "Unit Price": 29.99,
+      },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Orders");
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Disposition", 'attachment; filename="orders_template.xlsx"');
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buf);
+  });
+
+  app.get("/api/export/template/expenses", (_req, res) => {
+    const rows = [
+      {
+        Name: "Office Supplies",
+        Details: "Pens, paper, etc.",
+        Category: "Operations",
+        Subcategory: "Supplies",
+        Amount: 25.0,
+        Quantity: 1,
+        Date: new Date().toISOString().slice(0, 10),
+      },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Expenses");
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Disposition", 'attachment; filename="expenses_template.xlsx"');
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buf);
+  });
+
+  // ── Excel Import ───────────────────────────────────────────────────────────
+
+  app.post("/api/import/inventory", importUpload.single("file"), (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+      const wb = XLSX.read(req.file.buffer, { type: "buffer" });
+      const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+      let created = 0;
+      const errors: { row: number; message: string }[] = [];
+
+      // Group rows by Name+Category so multiple sizes → one item
+      const groups = new Map<string, any[]>();
+      rows.forEach((row, idx) => {
+        if (!row["Name"]) {
+          errors.push({ row: idx + 2, message: "Name is required" });
+          return;
+        }
+        const key = `${String(row["Name"]).trim()}||${String(row["Category"] || "").trim()}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push({ ...row, __idx: idx + 2 });
+      });
+
+      const insertItem = db.transaction((rows: any[]) => {
+        const first = rows[0];
+        const itemName = String(first["Name"]).trim();
+        const categoryName = first["Category"] ? String(first["Category"]).trim() : null;
+
+        if (categoryName) {
+          db.prepare("INSERT OR IGNORE INTO categories (name) VALUES (?)").run(categoryName);
+        }
+        const cat = categoryName
+          ? (db.prepare("SELECT id FROM categories WHERE name = ?").get(categoryName) as any)
+          : null;
+
+        const result = db
+          .prepare(
+            `INSERT INTO items (name, description, price, category_id, low_stock_threshold)
+             VALUES (?, ?, ?, ?, ?)`
+          )
+          .run(
+            itemName,
+            first["Description"] ?? null,
+            parseFloat(first["Price"]) || 0,
+            cat?.id ?? null,
+            parseInt(first["Low Stock Threshold"]) || 5
+          );
+
+        const itemId = result.lastInsertRowid;
+        rows.forEach((row) => {
+          db.prepare(
+            "INSERT INTO item_variants (item_id, size, stock_count) VALUES (?, ?, ?)"
+          ).run(itemId, String(row["Size"] ?? "One Size").trim(), parseInt(row["Stock Count"]) || 0);
+        });
+        return rows.length;
+      });
+
+      groups.forEach((groupRows) => {
+        try {
+          insertItem(groupRows);
+          created++;
+        } catch (err: any) {
+          errors.push({ row: groupRows[0].__idx, message: err.message });
+        }
+      });
+
+      res.json({ created, errors });
+    } catch (error) {
+      console.error("Import inventory error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/import/orders", importUpload.single("file"), (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+      const wb = XLSX.read(req.file.buffer, { type: "buffer" });
+      const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+      let created = 0;
+      const errors: { row: number; message: string }[] = [];
+
+      const insertOrder = db.transaction((row: any, rowIdx: number) => {
+        const customerName = row["Customer Name"];
+        if (!customerName) throw new Error("Customer Name is required");
+
+        const productName = row["Product Name"];
+        const size = row["Size"];
+        if (!productName || !size) throw new Error("Product Name and Size are required");
+
+        const variant = db
+          .prepare(
+            `SELECT v.id, v.stock_count FROM item_variants v
+             JOIN items i ON v.item_id = i.id
+             WHERE i.name = ? AND v.size = ? AND i.is_deleted = 0`
+          )
+          .get(String(productName).trim(), String(size).trim()) as any;
+
+        if (!variant) throw new Error(`Product "${productName}" size "${size}" not found in inventory`);
+
+        const qty = parseInt(row["Quantity"]) || 1;
+        const unitPrice = parseFloat(row["Unit Price"]) || 0;
+        const discount = parseFloat(row["Discount"]) || 0;
+        const status = isValidOrderStatus(String(row["Status"] || "")) ? String(row["Status"]) as OrderStatusType : "active";
+
+        const totalAmount = qty * unitPrice - discount;
+        const customerDetails = JSON.stringify({
+          name: String(customerName).trim(),
+          phone: String(row["Customer Phone"] || "").trim(),
+          address: String(row["Customer Address"] || "").trim(),
+        });
+
+        const orderResult = db
+          .prepare(
+            `INSERT INTO orders (status, customer_details, discount, total_amount, notes)
+             VALUES (?, ?, ?, ?, ?)`
+          )
+          .run(status, customerDetails, discount, totalAmount, row["Notes"] ?? null);
+
+        const orderId = orderResult.lastInsertRowid;
+        db.prepare(
+          "INSERT INTO order_items (order_id, variant_id, quantity, unit_price) VALUES (?, ?, ?, ?)"
+        ).run(orderId, variant.id, qty, unitPrice);
+
+        db.prepare("UPDATE item_variants SET stock_count = stock_count - ? WHERE id = ?").run(qty, variant.id);
+      });
+
+      rows.forEach((row, idx) => {
+        try {
+          insertOrder(row, idx + 2);
+          created++;
+        } catch (err: any) {
+          errors.push({ row: idx + 2, message: err.message });
+        }
+      });
+
+      res.json({ created, errors });
+    } catch (error) {
+      console.error("Import orders error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/import/expenses", importUpload.single("file"), (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+      const wb = XLSX.read(req.file.buffer, { type: "buffer", cellDates: true });
+      const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, dateNF: "yyyy-mm-dd" });
+
+      let created = 0;
+      const errors: { row: number; message: string }[] = [];
+
+      rows.forEach((row, idx) => {
+        try {
+          const name = row["Name"];
+          if (!name) throw new Error("Name is required");
+
+          const rawDate = row["Date"];
+          if (!rawDate) throw new Error("Date is required");
+          const dateStr = String(rawDate).slice(0, 10);
+
+          const amount = parseFloat(row["Amount"]);
+          if (isNaN(amount)) throw new Error("Amount must be a number");
+
+          const quantity = parseFloat(row["Quantity"]) || 1;
+          const totalAmount = amount * quantity;
+
+          db.prepare(
+            `INSERT INTO expenses (name, details, category, subcategory, amount, quantity, total_amount, date)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          ).run(
+            String(name).trim(),
+            row["Details"] ?? null,
+            row["Category"] ?? null,
+            row["Subcategory"] ?? null,
+            amount,
+            quantity,
+            totalAmount,
+            dateStr
+          );
+          created++;
+        } catch (err: any) {
+          errors.push({ row: idx + 2, message: err.message });
+        }
+      });
+
+      res.json({ created, errors });
+    } catch (error) {
+      console.error("Import expenses error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
