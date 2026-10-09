@@ -1,14 +1,26 @@
 {
-  "name": "Inventra Dev",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "runArgs": ["--name", "Inventra"],
+  "name": "inventra",
+  "image": "mcr.microsoft.com/devcontainers/base:jammy",
+  "runArgs": [
+    "--name",
+    "inventra"
+  ],
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker": {
-      "version": "latest",
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    // For building and running the app's Docker image against the host's Docker
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
       "moby": false
-    }
+    },
+    "ghcr.io/dobermanch/devcontainer-features/vscode-base:1": {},
+    "ghcr.io/dobermanch/devcontainer-features/host-ssh:1": {},
+    "ghcr.io/dobermanch/devcontainer-features/host-claude:1": {},
+    "ghcr.io/dobermanch/devcontainer-features/idle-shutdown:1": {}
   },
-  "forwardPorts": [3000],
+  "forwardPorts": [
+    3000
+  ],
   "portsAttributes": {
     "3000": {
       "label": "App (Express + Vite)",
@@ -21,16 +33,16 @@
   },
   "customizations": {
     "vscode": {
+      // Added to vscode-base's list
       "extensions": [
         "ms-azuretools.vscode-docker",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "alexcvzz.vscode-sqlite",
+        "qwtel.sqlite-viewer",
         "dsznajder.es7-react-js-snippets",
         "christian-kohler.path-intellisense",
-        "formulahendry.auto-rename-tag",
-        "ms-vscode.vscode-json"
+        "formulahendry.auto-rename-tag"
       ],
       "settings": {
         "editor.formatOnSave": true,
@@ -42,5 +54,8 @@
         ]
       }
     }
-  }
+  },
+  // Stop on last window close; idle-shutdown stops it after 30 idle minutes
+  "shutdownAction": "stopContainer",
+  "remoteUser": "vscode"
 }
