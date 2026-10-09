@@ -27,7 +27,9 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postCreateCommand": "npm install",
+  // Language server for Claude Code's typescript-lsp plugin, and the system
+  // libraries Chromium needs for the Playwright MCP server (.mcp.json)
+  "postCreateCommand": "npm install && npm install -g typescript-language-server typescript && npx -y playwright install-deps chromium",
   "remoteEnv": {
     "APP_URL": "${localEnv:APP_URL}"
   },
